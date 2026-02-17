@@ -1,4 +1,4 @@
-import ollama, os
+import ollama, os, atexit
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -13,7 +13,7 @@ print('Press ctrl + c to exit.')
 print('The LLM will act as the Game Master, play along by inputing your characters actions each turn and the LLM will respond with the outcome setting up the next turn.')
 print('Generating...')
 
-rules = {'role': 'system', 'content': 'Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player.'}
+rules = {'role': 'system', 'content': 'Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, do not ask them to perform the roll. Keep your responses brief. Use standard characters.'}
 scenario = {'role': 'user', 'content': 'Describe a start for the following scenario: the player wakes up on a forest road with no memories, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest whilst the road leads out of the forest.'}
 
 startMessage = client.chat(model=model, messages=[
@@ -23,6 +23,19 @@ startMessage = client.chat(model=model, messages=[
 print('GM:\n' + startMessage.message.content)
 
 chatlogs = [rules, {'role': 'assistant', 'content': startMessage.message.content}]
+
+# Run on exit
+def exit():
+    file_name = 'session.txt'
+    file_path = os.path.join('sessions', file_name)
+    with open(file_path, 'w', encoding='utf-8') as file:
+        for line in chatlogs[1:]:
+            if line['role'] == 'assistant':
+                file.write('GM:\n' + line['content'] + '\n\n')
+            elif line['role'] == 'user':
+                file.write('PLAYER:\n' + line['content'] + '\n\n')
+
+atexit.register(exit)
 
 while True:
     action = input('Describe the players\' actions: ')

@@ -1,0 +1,13 @@
+GM:
+You stir as the first light of dawn slants through the canopy. Your head throbs, and a metallic taste coats your tongue. When you sit up, you find yourself on a narrow, muddy forest road. Beside you lies a caravan—its canvas torn, wheels splintered, and a plume of black smoke still curling upward from a broken lantern.
+
+The road stretches ahead, disappearing into the dense line of trees that mark the forest’s edge. To your left, a narrow trail winds deeper into the woods, its footing littered with broken crates and splintered planks from the wreckage. The air smells of pine, damp earth, and faint acrid residue from the fire.
+
+You have no memory of who you are or how you came to be here. All you can do is decide where to go. 
+
+**Possible actions:**  
+- Examine the caravan wreckage.  
+- Follow the road out of the forest.  
+- Take the trail deeper into the woods.  
+- Search your own person for clues (clothing, belongings, injuries).
+
