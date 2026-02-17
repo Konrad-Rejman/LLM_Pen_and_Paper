@@ -1,4 +1,4 @@
-import ollama, os, atexit
+import ollama, os, atexit, re
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,14 +22,21 @@ startMessage = client.chat(model=model, messages=[
 ])
 print('GM:\n' + startMessage.message.content)
 
-chatlogs = [rules, {'role': 'assistant', 'content': startMessage.message.content}]
+chatlogs = [{'role': 'assistant', 'content': startMessage.message.content}] # Full chat history
+memory = [rules, {'role': 'assistant', 'content': startMessage.message.content}] # Model context
 
 # Run on exit
 def exit():
-    file_name = 'session.txt'
+    for f in os.listdir('sessions'):
+        file_number = int(re.sub(r'[^0-9]', '', f)) # Last session number
+
+    # Construct file name
+    file_name = 'session_' + str(file_number+1) + '.txt'
     file_path = os.path.join('sessions', file_name)
+
+    # Write a file containing the session chatlogs
     with open(file_path, 'w', encoding='utf-8') as file:
-        for line in chatlogs[1:]:
+        for line in chatlogs:
             if line['role'] == 'assistant':
                 file.write('GM:\n' + line['content'] + '\n\n')
             elif line['role'] == 'user':
@@ -41,9 +48,11 @@ while True:
     action = input('Describe the players\' actions: ')
     print('Player:\n' + action)
     chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
+    memory.append({'role': 'user',  'content': action})
 
     # Get response from model
-    response = client.chat(model=model, messages=chatlogs)
+    response = client.chat(model=model, messages=memory)
     chatlogs.append({'role': 'assistant',  'content': response.message.content}) # Add GM response to chat history
+    memory.append({'role': 'assistant',  'content': response.message.content})
 
     print('GM:\n' + response.message.content)
