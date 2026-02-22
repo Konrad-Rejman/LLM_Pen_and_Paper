@@ -1,4 +1,4 @@
-import ollama, os, atexit, re
+import ollama, os, re, random
 import pandas as pd
 from dotenv import load_dotenv
 
@@ -78,9 +78,20 @@ while True:
         save() # Save session data
         quit() # End program
 
+    # Generate random rolls for model to use
+    rolls = {'role': 'system', 'content': 'To simulate dice rolls, use the following random rolls in order when needed: '}
+    roll_num = 5 # Number of random rolls to pass to model
+    for i in range(roll_num): 
+        r = random.randint(1, 20)
+        rolls['content'] = rolls['content'] + str(r)
+        if i < roll_num - 1:
+            rolls['content'] = rolls['content'] + ', '
+    memory.append(rolls) # Add rolls message to models memory
+
     # Get response from model
     response = client.chat(model=model, messages=memory)
     chatlogs.append({'role': 'assistant',  'content': response.message.content}) # Add GM response to chat history
     memory.append({'role': 'assistant',  'content': response.message.content})
+    memory.remove(rolls) # Remove rolls message from memory
 
     print('GM:\n' + response.message.content)
