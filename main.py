@@ -1,6 +1,7 @@
-import ollama, os, re, random
+import ollama, os, re
 import pandas as pd
 from dotenv import load_dotenv
+from context_full_history import full_history
 
 load_dotenv()
 
@@ -14,7 +15,7 @@ print('Press ctrl + c to exit.')
 print('The LLM will act as the Game Master (GM), play along by inputing your characters actions each turn and the LLM will respond with the outcome setting up the next turn.')
 print('Generating...')
 
-rules = {'role': 'system', 'content': 'Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, do not ask them to perform the roll. Keep your responses brief. Avoid special characters, such as emojis and asterisks.'}
+rules = {'role': 'system', 'content': 'Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, do not ask them to perform the roll. Keep your responses brief. Avoid special characters, such as emojis and asterisks (* or **).'}
 scenario = {'role': 'user', 'content': 'Describe a start for the following scenario: the player wakes up on a forest road with no memories, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest whilst the road leads out of the forest.'}
 
 startMessage = client.chat(model=model, messages=[
@@ -70,28 +71,4 @@ def save():
     df.to_csv('data.csv')
 
 while True:
-    try:
-        action = input('Describe the players\' actions: ')
-        chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
-        memory.append({'role': 'user',  'content': action})
-    except KeyboardInterrupt:
-        save() # Save session data
-        quit() # End program
-
-    # Generate random rolls for model to use
-    rolls = {'role': 'system', 'content': 'To simulate dice rolls, use the following random rolls in order when needed: '}
-    roll_num = 5 # Number of random rolls to pass to model
-    for i in range(roll_num): 
-        r = random.randint(1, 20)
-        rolls['content'] = rolls['content'] + str(r)
-        if i < roll_num - 1:
-            rolls['content'] = rolls['content'] + ', '
-    memory.append(rolls) # Add rolls message to models memory
-
-    # Get response from model
-    response = client.chat(model=model, messages=memory)
-    chatlogs.append({'role': 'assistant',  'content': response.message.content}) # Add GM response to chat history
-    memory.append({'role': 'assistant',  'content': response.message.content})
-    memory.remove(rolls) # Remove rolls message from memory
-
-    print('GM:\n' + response.message.content)
+    full_history(chatlogs, memory, save, client, model)
