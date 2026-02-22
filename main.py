@@ -14,7 +14,7 @@ print('Press ctrl + c to exit.')
 print('The LLM will act as the Game Master (GM), play along by inputing your characters actions each turn and the LLM will respond with the outcome setting up the next turn.')
 print('Generating...')
 
-rules = {'role': 'system', 'content': 'Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, do not ask them to perform the roll. Keep your responses brief. Use standard characters.'}
+rules = {'role': 'system', 'content': 'Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, do not ask them to perform the roll. Keep your responses brief. Avoid special characters, such as emojis and asterisks.'}
 scenario = {'role': 'user', 'content': 'Describe a start for the following scenario: the player wakes up on a forest road with no memories, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest whilst the road leads out of the forest.'}
 
 startMessage = client.chat(model=model, messages=[
@@ -27,7 +27,7 @@ chatlogs = [{'role': 'assistant', 'content': startMessage.message.content}] # Fu
 memory = [rules, {'role': 'assistant', 'content': startMessage.message.content}] # Model context
 
 # Run on exit
-def exit():
+def save():
     # Save session info
     file_number = 0
     for f in os.listdir('sessions'):
@@ -69,12 +69,14 @@ def exit():
     df = pd.concat([df, new_row])
     df.to_csv('data.csv')
 
-atexit.register(exit)
-
 while True:
-    action = input('Describe the players\' actions: ')
-    chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
-    memory.append({'role': 'user',  'content': action})
+    try:
+        action = input('Describe the players\' actions: ')
+        chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
+        memory.append({'role': 'user',  'content': action})
+    except KeyboardInterrupt:
+        save() # Save session data
+        quit() # End program
 
     # Get response from model
     response = client.chat(model=model, messages=memory)
