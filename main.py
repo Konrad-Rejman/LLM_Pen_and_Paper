@@ -2,6 +2,7 @@ import ollama, os, random
 import pandas as pd
 from dotenv import load_dotenv
 from context_full_history import full_history
+from context_n_latest import n_latest
 
 load_dotenv()
 
@@ -113,4 +114,4 @@ while True:
     if method == 'Full_Context':
         full_history(chatlogs, memory, save, client, model)
     elif method == 'N_Latest':
-        full_history(chatlogs, memory, save, client, model)
+        n_latest(chatlogs, memory, save, client, model)
