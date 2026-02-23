@@ -20,7 +20,7 @@ user = input('Enter your username (please use the same username for each session
 
 # Choose a context method the user hasn't used yet randomly, else choose a random method
 context_methods = ['Full_Context', 'N_Latest'] # List of implemented methods
-# random.shuffle(context_methods) # Randomise order of methods
+random.shuffle(context_methods) # Randomise order of methods
 
 # Check data file for users previous sessions
 df = pd.read_csv('data.csv', index_col=0)
@@ -74,11 +74,22 @@ def save():
                 file.write('PLAYER:\n' + line['content'] + '\n\n')
 
     # Get feedback
-    print('On a scale of 0 - 10, how would you rate the completed session on the following:\n')
-    consistency = input('The GMs ability to maintain a consistent narrative: ')
-    adherence = input('The GMs ability to follow established rules: ')
-    creativity = input('The GMs creativity in storytelling: ')
-    enjoyment = input('Your overall enjoyment of the game session: ')
+    valid_numbers = set(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'])
+
+    def feedback():
+        print('On a scale of 0 - 10, how would you rate the completed session on the following:\n')
+        global consistency, adherence, creativity, enjoyment
+        consistency = input('The GMs ability to maintain a consistent narrative: ')
+        adherence = input('The GMs ability to follow established rules: ')
+        creativity = input('The GMs creativity in storytelling: ')
+        enjoyment = input('Your overall enjoyment of the game session: ')
+
+        # If any of the values entered are not valid numbers
+        if consistency not in valid_numbers or adherence not in valid_numbers or creativity not in valid_numbers or enjoyment not in valid_numbers:
+            print('\nOne of the values you entered was not between 0 and 10, please try again.')
+            feedback()
+
+    feedback()
 
     session_data = {
         'Session': [file_name], 
