@@ -2,7 +2,7 @@ import random
 
 def full_history(chatlogs, memory, save, client, model):
     try:
-        action = input('Describe the players\' actions: ')
+        action = input('\nDescribe the player\'s actions: ')
         chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
         memory.append({'role': 'user',  'content': action})
     except KeyboardInterrupt:

@@ -3,6 +3,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from context_full_history import full_history
 from context_n_latest import n_latest
+from context_running_summary import running_summary
 
 load_dotenv()
 
@@ -20,7 +21,7 @@ print('Generating...')
 user = input('Enter your username (please use the same username for each session): ')
 
 # Choose a context method the user hasn't used yet randomly, else choose a random method
-context_methods = ['Full_Context', 'N_Latest'] # List of implemented methods
+context_methods = ['Full_Context', 'N_Latest', 'Running_Summary'] # List of implemented methods
 random.shuffle(context_methods) # Randomise order of methods
 
 # Check data file for users previous sessions
@@ -41,7 +42,7 @@ if not method: # If user has used every context method at least once, choose a r
     method = random.choice(context_methods)
 
 # Model setup
-rules = {'role': 'system', 'content': 'Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, do not ask them to perform the roll. Keep your responses brief. Avoid special characters, such as emojis and asterisks (* or **).'}
+rules = {'role': 'system', 'content': 'Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, do not ask them to perform the roll. Avoid special characters, such as emojis and asterisks (* or **).'}
 scenario = {'role': 'user', 'content': 'Describe a start for the following scenario: the player wakes up on a forest road with no memories, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest whilst the road leads out of the forest.'}
 
 startMessage = client.chat(model=model, messages=[
@@ -75,10 +76,10 @@ def save():
                 file.write('PLAYER:\n' + line['content'] + '\n\n')
 
     # Get feedback
-    valid_numbers = set(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'])
+    valid_numbers = set(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'])
 
     def feedback():
-        print('On a scale of 0 - 10, how would you rate the completed session on the following:\n')
+        print('On a scale of 1 - 10, how would you rate the completed session on the following:\n')
         global consistency, adherence, creativity, enjoyment
         consistency = input('The GMs ability to maintain a consistent narrative: ')
         adherence = input('The GMs ability to follow established rules: ')
@@ -110,8 +111,15 @@ def save():
     df = pd.concat([df, new_row])
     df.to_csv('data.csv')
 
+summary = False
+
 while True:
     if method == 'Full_Context':
         full_history(chatlogs, memory, save, client, model)
     elif method == 'N_Latest':
         n_latest(chatlogs, memory, save, client, model)
+    elif method == 'Running_Summary':
+        if not summary:
+            memory, summary = running_summary(chatlogs, rules, memory[1:], save, client, model, summary)
+        else:
+            memory, summary = running_summary(chatlogs, rules, memory, save, client, model, summary)

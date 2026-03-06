@@ -2,7 +2,7 @@ import random
 
 def n_latest(chatlogs, memory, save, client, model, n=5):
     try:
-        action = input('Describe the players\' actions: ')
+        action = input('\nDescribe the player\'s actions: ')
         chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
         memory.append({'role': 'user',  'content': action})
     except KeyboardInterrupt:
