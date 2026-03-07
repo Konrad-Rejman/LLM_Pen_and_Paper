@@ -42,8 +42,8 @@ if not method: # If user has used every context method at least once, choose a r
     method = random.choice(context_methods)
 
 # Model setup
-rules = {'role': 'system', 'content': 'Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, do not ask them to perform the roll. Avoid special characters, such as emojis and asterisks (* or **).'}
-scenario = {'role': 'user', 'content': 'Describe a start for the following scenario: the player wakes up on a forest road with no memories, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest whilst the road leads out of the forest.'}
+rules = {'role': 'system', 'content': 'Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, do not ask them to perform the roll. Provide your response in clear markdown text, without any markdown or special characters.'}
+scenario = {'role': 'user', 'content': 'Describe a start for the following scenario: the player wakes up on a forest road with no memories, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. Try to set up future quests and recurring characters.'}
 
 startMessage = client.chat(model=model, messages=[
     rules,
@@ -52,7 +52,7 @@ startMessage = client.chat(model=model, messages=[
 print('GM:\n' + startMessage.message.content)
 
 chatlogs = [{'role': 'assistant', 'content': startMessage.message.content}] # Full chat history
-memory = [rules, {'role': 'assistant', 'content': startMessage.message.content}] # Model context
+memory = [{'role': 'assistant', 'content': startMessage.message.content}] # Model context
 
 # Run on exit
 def save():
@@ -111,15 +111,12 @@ def save():
     df = pd.concat([df, new_row])
     df.to_csv('data.csv')
 
-summary = False
+summary = 'The player has woken up on a forest road with no memories, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. Try to set up future quests and recurring characters.'
 
 while True:
     if method == 'Full_Context':
-        full_history(chatlogs, memory, save, client, model)
+        full_history(chatlogs, [rules] + [{'role': 'system', 'content': 'This is a broad summary of the story: ' + summary}] + memory, save, client, model)
     elif method == 'N_Latest':
-        n_latest(chatlogs, memory, save, client, model)
+        n_latest(chatlogs, [rules] + [{'role': 'system', 'content': 'This is a broad summary of the story: ' + summary}] + memory, save, client, model)
     elif method == 'Running_Summary':
-        if not summary:
-            memory, summary = running_summary(chatlogs, rules, memory[1:], save, client, model, summary)
-        else:
-            memory, summary = running_summary(chatlogs, rules, memory, save, client, model, summary)
+        summary = running_summary(chatlogs, rules, memory, save, client, model, summary)

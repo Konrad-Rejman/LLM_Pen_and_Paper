@@ -29,19 +29,11 @@ def running_summary(chatlogs, rules, memory, save, client, model, summary=False)
 
     print('GM:\n' + response.message.content)
 
-    # Summarise what has happened so far
-    if not summary:
-        # If no summary yet initialised, create one based on memory
-        instructions = {'role': 'system', 'content': 'Summarise the story so far.'}
-        memory.append(instructions)
-        summary = client.chat(model=model, messages=memory).message.content
-        memory = [{'role': 'system', 'content': 'Summary of the story so far: ' + summary}]
-    else:
-        # If there is already a summary, update the summary based on most recent context
-        instructions = {'role': 'system', 'content': 'Update the following Summary: ' + summary}
-        memory = [instructions, {'role': 'user',  'content': action}]
-        new_summary = client.chat(model=model, messages=memory).message.content
-        summary = new_summary
-        memory = [{'role': 'system', 'content': 'Summary of the story so far: ' + summary}]
+    # Update the summary based on most recent context
+    instructions = {'role': 'system', 'content': 'Update the following Summary: ' + summary}
+    memory = [instructions, {'role': 'user',  'content': action}]
+    new_summary = client.chat(model=model, messages=memory).message.content
+    summary = new_summary
+    memory = [{'role': 'system', 'content': 'Summary of the story so far: ' + summary}]
 
-    return memory, summary
+    return summary
