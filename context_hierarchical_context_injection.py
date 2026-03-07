@@ -1,6 +1,6 @@
 import random
 
-def running_summary(chatlogs, rules, memory, save, client, model, summary):
+def running_summary(chatlogs, rules, memory, save, client, model, hierachical_summary):
     try:
         action = input('\nDescribe the players\' actions: ')
         chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
@@ -30,10 +30,10 @@ def running_summary(chatlogs, rules, memory, save, client, model, summary):
     print('GM:\n' + response.message.content)
 
     # Update the summary based on most recent context
-    instructions = {'role': 'system', 'content': 'Update the following Summary: ' + summary}
+    instructions = {'role': 'system', 'content': 'Update the following Summary without changing its structure: ' + hierachical_summary}
     memory = [instructions, {'role': 'user',  'content': action}]
-    new_summary = client.chat(model=model, messages=memory).message.content
-    summary = new_summary
-    memory = [{'role': 'system', 'content': 'Summary of the story so far: ' + summary}]
+    new_hierarchical_summary = client.chat(model=model, messages=memory).message.content
+    hierachical_summary = new_hierarchical_summary
+    memory = [{'role': 'system', 'content': 'Summary of the story so far: ' + hierachical_summary}]
 
-    return summary
+    return hierachical_summary

@@ -21,7 +21,7 @@ print('Generating...')
 user = input('Enter your username (please use the same username for each session): ')
 
 # Choose a context method the user hasn't used yet randomly, else choose a random method
-context_methods = ['Full_Context', 'N_Latest', 'Running_Summary'] # List of implemented methods
+context_methods = ['Full_Context', 'N_Latest', 'Running_Summary', 'Hierarchical_Summary'] # List of implemented methods
 random.shuffle(context_methods) # Randomise order of methods
 
 # Check data file for users previous sessions
@@ -111,12 +111,17 @@ def save():
     df = pd.concat([df, new_row])
     df.to_csv('data.csv')
 
-summary = 'The player has woken up on a forest road with no memories, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. Try to set up future quests and recurring characters.'
+# Summaries of overall story, these are updated in the Running_Summary and Hierarchical_Summary context methods
+summary = 'The player has woken up on a forest road with no memories and nothing but the clothes on their back, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.'
+hierachical_summary = 'OVERALL STORY: The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.\n\nCURRENT QUEST: The player is beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. The player must find a way out of the forest.\n\nPLAYER STATUS: The player has woken up with no memories and nothing but the clothes on their back.'
 
+# Core loop, prompting the Model to continue with the story until the player exits using Ctrl + C
 while True:
     if method == 'Full_Context':
-        full_history(chatlogs, [rules] + [{'role': 'system', 'content': 'This is a broad summary of the story: ' + summary}] + memory, save, client, model)
+        full_history(chatlogs, [rules] + [{'role': 'system', 'content': 'This is a broad overview of the main story: ' + summary}] + memory, save, client, model)
     elif method == 'N_Latest':
-        n_latest(chatlogs, [rules] + [{'role': 'system', 'content': 'This is a broad summary of the story: ' + summary}] + memory, save, client, model)
+        n_latest(chatlogs, [rules] + [{'role': 'system', 'content': 'This is a broad overview of the main story: ' + summary}] + memory, save, client, model)
     elif method == 'Running_Summary':
         summary = running_summary(chatlogs, rules, memory, save, client, model, summary)
+    elif method == 'Hierarchical_Summary':
+        hierachical_summary = running_summary(chatlogs, rules, memory, save, client, model, hierachical_summary)
