@@ -42,8 +42,8 @@ if not method: # If user has used every context method at least once, choose a r
     method = random.choice(context_methods)
 
 # Model setup
-rules = {'role': 'system', 'content': 'Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, do not ask them to perform the roll. Provide your response in clear markdown text, without any markdown or special characters.'}
-scenario = {'role': 'user', 'content': 'Describe a start for the following scenario: the player wakes up on a forest road with no memories, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. Try to set up future quests and recurring characters.'}
+rules = {'role': 'system', 'content': 'Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, a list of random rolls will be provided for you to use. Provide your response in clear markdown text, without any markdown or special characters.'}
+scenario = {'role': 'user', 'content': 'Describe a start for the following scenario: the player wakes up on a forest road with no memories, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. Set up future quests and recurring characters.'}
 
 startMessage = client.chat(model=model, messages=[
     rules,
@@ -76,10 +76,10 @@ def save():
                 file.write('PLAYER:\n' + line['content'] + '\n\n')
 
     # Get feedback
-    valid_numbers = set(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'])
+    valid_numbers = set(['1', '2', '3', '4', '5', '6', '7'])
 
     def feedback():
-        print('On a scale of 1 - 10, how would you rate the completed session on the following:\n')
+        print('On a scale of 1 - 7, how would you rate the completed session on the following:\n')
         global consistency, adherence, creativity, enjoyment
         consistency = input('The GMs ability to maintain a consistent narrative: ')
         adherence = input('The GMs ability to follow established rules: ')
@@ -97,10 +97,10 @@ def save():
         'Session': [file_name], 
         'User': [user],
         'Context Method': [method],
-        'Consistency (0-10)': [consistency], 
-        'Rule Adherence (0-10)': [adherence], 
-        'Creativity (0-10)': [creativity], 
-        'Enjoyment (0-10)': [enjoyment], 
+        'Consistency (1-7)': [consistency], 
+        'Rule Adherence (1-7)': [adherence], 
+        'Creativity (1-7)': [creativity], 
+        'Enjoyment (1-7)': [enjoyment], 
         'Tokens': [0], 
         'Playtime': [0]
     }
