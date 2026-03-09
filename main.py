@@ -90,7 +90,7 @@ def save():
         'Rule Adherence (1-7)': [adherence], 
         'Creativity (1-7)': [creativity], 
         'Enjoyment (1-7)': [enjoyment], 
-        'Tokens': [0], 
+        'Tokens': [tokens], 
         'Playtime (s)': [round(time.time() - starttime)]
     }
     new_row = pd.DataFrame(session_data)
@@ -112,13 +112,16 @@ memory = [{'role': 'assistant', 'content': startMessage}] # Model context
 summary = 'STORY SUMMARY: The player has woken up on a forest road with no memories and nothing but the clothes on their back and a small silver medallion shaped like a stylized wolf\'s head, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.'
 hierarchical_summary = 'OVERALL STORY: The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.\n\nCURRENT QUEST: The player is inside a forest beside a caravan which has been destroyed, a trail leads from the wreckage into the forest. The player must find a way out of the forest.\n\nPLAYER STATUS: The player has woken up with no memories and nothing but the clothes on their back and a small silver medallion shaped like a stylized wolf\'s head.'
 
+# Initialise token counter
+tokens = 0
+
 # Core loop, prompting the Model to continue with the story until the player exits using Ctrl + C
 while True:
     if method == 'Full_Context':
-        full_history(chatlogs, [rules] + [{'role': 'system', 'content': summary}] + memory, save, client, model)
+        tokens = full_history(chatlogs, [rules] + [{'role': 'system', 'content': summary}] + memory, save, client, model, tokens)
     elif method == 'N_Latest':
-        n_latest(chatlogs, [rules] + [{'role': 'system', 'content': summary}] + memory, save, client, model)
+        tokens = n_latest(chatlogs, [rules] + [{'role': 'system', 'content': summary}] + memory, save, client, model, tokens)
     elif method == 'Running_Summary':
-        summary = running_summary(chatlogs, rules, save, client, model, summary)
+        tokens, summary = running_summary(chatlogs, rules, save, client, model, summary, tokens)
     elif method == 'Hierarchical_Summary':
-        hierarchical_summary = hierarchical_context(chatlogs, rules, save, client, model, hierarchical_summary)
+        tokens, hierarchical_summary = hierarchical_context(chatlogs, rules, save, client, model, hierarchical_summary, tokens)

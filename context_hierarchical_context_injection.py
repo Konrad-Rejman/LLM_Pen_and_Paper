@@ -1,6 +1,6 @@
 import random
 
-def hierarchical_context(chatlogs, rules, save, client, model, hierarchical_summary):
+def hierarchical_context(chatlogs, rules, save, client, model, hierarchical_summary, tokens):
     try:
         action = input('\nDescribe the players\' actions: ')
         chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
@@ -20,6 +20,7 @@ def hierarchical_context(chatlogs, rules, save, client, model, hierarchical_summ
     # Get response from model
     memory = [rules, rolls, {'role': 'system', 'content': 'This is an overview of the story so far: ' + hierarchical_summary}, {'role': 'user',  'content': action}]
     response = client.chat(model=model, messages=memory)
+    tokens += response.prompt_eval_count # Add tokens processed to token counter
     chatlogs.append({'role': 'assistant',  'content': response.message.content}) # Add GM response to chat history
 
     print('GM:\n' + response.message.content)
@@ -27,7 +28,8 @@ def hierarchical_context(chatlogs, rules, save, client, model, hierarchical_summ
     # Update the summary based on most recent context
     instructions = {'role': 'system', 'content': 'Update the following Summary without removing its current headings or changing its current structure (OVERALL STORY, CURRENT QUEST, PLAYER STATUS): ' + hierarchical_summary}
     memory = [instructions, {'role': 'user',  'content': action}]
-    new_hierarchical_summary = client.chat(model=model, messages=memory).message.content
-    hierarchical_summary = new_hierarchical_summary
+    new_hierarchical_summary = client.chat(model=model, messages=memory)
+    tokens += new_hierarchical_summary.prompt_eval_count # Add tokens processed to token counter
+    hierarchical_summary = new_hierarchical_summary.message.content
 
-    return hierarchical_summary
+    return tokens, hierarchical_summary

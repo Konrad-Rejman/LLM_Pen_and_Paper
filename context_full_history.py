@@ -1,6 +1,6 @@
 import random
 
-def full_history(chatlogs, memory, save, client, model):
+def full_history(chatlogs, memory, save, client, model, tokens):
     try:
         action = input('\nDescribe the player\'s actions: ')
         chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
@@ -21,8 +21,11 @@ def full_history(chatlogs, memory, save, client, model):
 
     # Get response from model
     response = client.chat(model=model, messages=memory)
+    tokens += response.prompt_eval_count # Add tokens processed to token counter
     chatlogs.append({'role': 'assistant',  'content': response.message.content}) # Add GM response to chat history
     memory.append({'role': 'assistant',  'content': response.message.content})
     memory.remove(rolls) # Remove rolls message from memory
 
     print('GM:\n' + response.message.content)
+
+    return tokens

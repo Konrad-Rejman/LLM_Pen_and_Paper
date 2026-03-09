@@ -1,6 +1,6 @@
 import random
 
-def n_latest(chatlogs, memory, save, client, model, n=5):
+def n_latest(chatlogs, memory, save, client, model, tokens, n=5):
     try:
         action = input('\nDescribe the player\'s actions: ')
         chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
@@ -21,6 +21,7 @@ def n_latest(chatlogs, memory, save, client, model, n=5):
 
     # Get response from model
     response = client.chat(model=model, messages=memory)
+    tokens += response.prompt_eval_count # Add tokens processed to token counter
     chatlogs.append({'role': 'assistant',  'content': response.message.content}) # Add GM response to chat history
     memory.append({'role': 'assistant',  'content': response.message.content})
     memory.remove(rolls) # Remove rolls message from memory
@@ -30,3 +31,5 @@ def n_latest(chatlogs, memory, save, client, model, n=5):
     # If memory is more than last n interactions (GM, Player) excluding rules, remove earliest interactions
     if len(memory[1:]) > 2*n:
         memory = [memory[0]] + memory[-2*n:] # memory = rules + last n interactions
+    
+    return tokens
