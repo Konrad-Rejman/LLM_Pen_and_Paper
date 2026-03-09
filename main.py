@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from context_full_history import full_history
 from context_n_latest import n_latest
 from context_running_summary import running_summary
+from context_hierarchical_context_injection import hierarchical_context
 
 load_dotenv()
 
@@ -42,7 +43,7 @@ if not method: # If user has used every context method at least once, choose a r
     method = random.choice(context_methods)
 
 # Model setup
-rules = {'role': 'system', 'content': 'Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, a list of random rolls will be provided for you to use. Provide your response in clear markdown text, without any markdown or special characters.'}
+rules = {'role': 'system', 'content': 'RULES: Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, a list of random rolls will be provided for you to use. Provide your response in clear plaintext, without any markdown or special characters.'}
 scenario = {'role': 'user', 'content': 'Describe a start for the following scenario: the player wakes up on a forest road with no memories, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. Set up future quests and recurring characters.'}
 
 startMessage = client.chat(model=model, messages=[
@@ -112,16 +113,16 @@ def save():
     df.to_csv('data.csv')
 
 # Summaries of overall story, these are updated in the Running_Summary and Hierarchical_Summary context methods
-summary = 'The player has woken up on a forest road with no memories and nothing but the clothes on their back, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.'
-hierachical_summary = 'OVERALL STORY: The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.\n\nCURRENT QUEST: The player is beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. The player must find a way out of the forest.\n\nPLAYER STATUS: The player has woken up with no memories and nothing but the clothes on their back.'
+summary = 'STORY SUMMARY: The player has woken up on a forest road with no memories and nothing but the clothes on their back, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.'
+hierarchical_summary = 'OVERALL STORY: The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.\n\nCURRENT QUEST: The player is beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. The player must find a way out of the forest.\n\nPLAYER STATUS: The player has woken up with no memories and nothing but the clothes on their back.'
 
 # Core loop, prompting the Model to continue with the story until the player exits using Ctrl + C
 while True:
     if method == 'Full_Context':
-        full_history(chatlogs, [rules] + [{'role': 'system', 'content': 'This is a broad overview of the main story: ' + summary}] + memory, save, client, model)
+        full_history(chatlogs, [rules] + [{'role': 'system', 'content': summary}] + memory, save, client, model)
     elif method == 'N_Latest':
-        n_latest(chatlogs, [rules] + [{'role': 'system', 'content': 'This is a broad overview of the main story: ' + summary}] + memory, save, client, model)
+        n_latest(chatlogs, [rules] + [{'role': 'system', 'content': summary}] + memory, save, client, model)
     elif method == 'Running_Summary':
-        summary = running_summary(chatlogs, rules, memory, save, client, model, summary)
+        summary = running_summary(chatlogs, rules, save, client, model, summary)
     elif method == 'Hierarchical_Summary':
-        hierachical_summary = running_summary(chatlogs, rules, memory, save, client, model, hierachical_summary)
+        hierarchical_summary = hierarchical_context(chatlogs, rules, save, client, model, hierarchical_summary)

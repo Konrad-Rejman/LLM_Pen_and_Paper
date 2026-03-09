@@ -1,10 +1,9 @@
 import random
 
-def running_summary(chatlogs, rules, memory, save, client, model, summary):
+def running_summary(chatlogs, rules, save, client, model, summary):
     try:
         action = input('\nDescribe the players\' actions: ')
         chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
-        memory.append({'role': 'user',  'content': action})
     except KeyboardInterrupt:
         save() # Save session data
         quit() # End program
@@ -19,21 +18,16 @@ def running_summary(chatlogs, rules, memory, save, client, model, summary):
             rolls['content'] = rolls['content'] + ', '
 
     # Get response from model
-    memory.append(rules) # Add rules to memory
-    memory.append(rolls) # Add rolls to memory
+    memory = [rules, rolls, {'role': 'system', 'content': 'This is an overview of the story so far: ' + summary}, {'role': 'user',  'content': action}]
     response = client.chat(model=model, messages=memory)
     chatlogs.append({'role': 'assistant',  'content': response.message.content}) # Add GM response to chat history
-    memory.append({'role': 'assistant',  'content': response.message.content})
-    memory.remove(rules) # Remove rules message from memory
-    memory.remove(rolls) # Remove rolls message from memory
 
     print('GM:\n' + response.message.content)
 
     # Update the summary based on most recent context
-    instructions = {'role': 'system', 'content': 'Update the following Summary: ' + summary}
+    instructions = {'role': 'system', 'content': 'Update the following Summary without removing the capitalised heading: ' + summary}
     memory = [instructions, {'role': 'user',  'content': action}]
     new_summary = client.chat(model=model, messages=memory).message.content
     summary = new_summary
-    memory = [{'role': 'system', 'content': 'Summary of the story so far: ' + summary}]
 
     return summary
