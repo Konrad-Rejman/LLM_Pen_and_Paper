@@ -23,7 +23,7 @@ def n_latest(chatlogs, memory, save, client, model, tokens, n=5):
         memory.append({'role': 'assistant',  'content': response.message.content})
         memory.remove(rolls) # Remove rolls message from memory
 
-        print('GM:\n' + response.message.content)
+        print('\nGM:\n\n' + response.message.content)
 
         # If memory is more than last n interactions (GM, Player) excluding rules, remove earliest interactions
         if len(memory[1:]) > 2*n:

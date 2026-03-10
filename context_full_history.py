@@ -23,7 +23,7 @@ def full_history(chatlogs, memory, save, client, model, tokens):
         memory.append({'role': 'assistant',  'content': response.message.content})
         memory.remove(rolls) # Remove rolls message from memory
 
-        print('GM:\n' + response.message.content)
+        print('\nGM:\n\n' + response.message.content)
         
     except KeyboardInterrupt:
         save() # Save session data

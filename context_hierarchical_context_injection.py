@@ -20,7 +20,7 @@ def hierarchical_context(chatlogs, rules, save, client, model, hierarchical_summ
         tokens += response.prompt_eval_count # Add tokens processed to token counter
         chatlogs.append({'role': 'assistant',  'content': response.message.content}) # Add GM response to chat history
 
-        print('GM:\n' + response.message.content)
+        print('\nGM:\n\n' + response.message.content)
 
         # Update the summary based on most recent context
         instructions = {'role': 'system', 'content': 'Update the following Summary without removing its current headings or changing its current structure (OVERALL STORY, CURRENT QUEST, PLAYER STATUS): ' + hierarchical_summary}

@@ -103,7 +103,7 @@ def save():
 # Model setup
 rules = {'role': 'system', 'content': 'RULES: Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, a list of random rolls will be provided for you to use (do not mention the list to the player, only use the rolls as if they were generated randomly). Provide your response in clear plaintext, WITHOUT any markdown or special characters such as hashtags or asterisks.'}
 startMessage = "You stir as the first light of dawn filters through a canopy of tangled branches. The air is cold and damp, the scent of pine and earth filling your lungs. When you sit up, you find yourself lying on a rough, moss-covered road that cuts through the forest like a scar. The twisted wreckage of a caravan lies beside you.\n\nYour head throbs, and you realize you have no memory of who you are, how you got here, or why the caravan is ruined. The only clue is a faint, silver-etched token clutched in your hand—a small medallion shaped like a stylized wolf\'s head, warm to the touch. As you stare at the wreckage, you notice a faint trail of disturbed leaves and broken twigs snaking away from the caravan into the dense forest."
-print('GM:\n' + startMessage)
+print('\nGM:\n\n' + startMessage)
 
 chatlogs = [{'role': 'assistant', 'content': startMessage}] # Full chat history
 memory = [{'role': 'assistant', 'content': startMessage}] # Model context
