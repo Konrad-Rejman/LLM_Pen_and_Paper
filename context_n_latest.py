@@ -7,8 +7,8 @@ def n_latest(chatlogs, context_logs, memory, save, client, model, tokens, n=5):
         memory.append({'role': 'user',  'content': action})
 
         # Generate random rolls for model to use
-        rolls = rolls()
-        memory.append(rolls) # Add rolls message to models memory
+        rolls_message = rolls()
+        memory.append(rolls_message) # Add rolls message to models memory
 
         # Get response from model
         response = client.chat(model=model, messages=memory)
@@ -19,12 +19,12 @@ def n_latest(chatlogs, context_logs, memory, save, client, model, tokens, n=5):
         chatlogs.append({'role': 'assistant',  'content': response.message.content}) # Add GM response to chat history
         memory.append({'role': 'assistant',  'content': response.message.content})
 
-        memory.remove(rolls) # Remove rolls message from memory
+        memory.remove(rolls_message) # Remove rolls message from memory
 
         print('\nGM:\n\n' + response.message.content)
 
-        # If memory is more than last n interactions (GM, Player) excluding rules, remove earliest interactions
-        if len(memory[1:]) > 2*n:
+        # If memory is more than last n interactions (GM, Player) excluding rules and summary, remove earliest interactions
+        if len(memory[2:]) > 2*n:
             memory = [memory[0]] + memory[-2*n:] # memory = rules + last n interactions
         
     except KeyboardInterrupt:

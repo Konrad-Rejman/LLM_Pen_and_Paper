@@ -7,8 +7,8 @@ def full_history(chatlogs, context_logs, memory, save, client, model, tokens):
         memory.append({'role': 'user',  'content': action})
 
         # Generate random rolls for model to use
-        rolls = rolls()
-        memory.append(rolls) # Add rolls message to models memory
+        rolls_message = rolls()
+        memory.append(rolls_message) # Add rolls message to models memory
 
         # Get response from model
         response = client.chat(model=model, messages=memory)
@@ -19,7 +19,7 @@ def full_history(chatlogs, context_logs, memory, save, client, model, tokens):
         chatlogs.append({'role': 'assistant',  'content': response.message.content}) # Add GM response to chat history
         memory.append({'role': 'assistant',  'content': response.message.content})
         
-        memory.remove(rolls) # Remove rolls message from memory
+        memory.remove(rolls_message) # Remove rolls message from memory
 
         print('\nGM:\n\n' + response.message.content)
         

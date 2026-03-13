@@ -48,13 +48,11 @@ def save():
     # Save session info
     file_number = 0
     for f in os.listdir('sessions'):
-        session_number = int(f) # Folder number
-        if session_number > file_number: # Last session number
-            file_number = session_number + 1
+        file_number += 1
 
     # Construct folder
-    folder_name = str(file_number)
-    os.makedirs(os.path.join('sessions', folder_name))
+    folder_name = os.path.join('sessions', str(file_number))
+    os.makedirs(folder_name)
 
     # Construct chatlogs file name
     file_name = str(file_number) + '_' + method + '_' + user
@@ -64,9 +62,9 @@ def save():
     with open(file_path, 'w', encoding='utf-8') as file:
         for prompt in chatlogs:
             if prompt['role'] == 'assistant':
-                file.write('GM:\n' + prompt['content'] + '\n\n')
+                file.write('GM:\n\n' + prompt['content'] + '\n\n')
             elif prompt['role'] == 'user':
-                file.write('PLAYER:\n' + prompt['content'] + '\n\n')
+                file.write('PLAYER:\n\n' + prompt['content'] + '\n\n')
     
     # Construct contextlogs file name
     file_name = str(file_number) + '_' + method + '_' + user + '_' + 'Context_Logs'
@@ -74,15 +72,15 @@ def save():
 
     # Write a file containing the memory context at each prompt
     with open(file_path, 'w', encoding='utf-8') as file:
-        for i in range(len(chatlogs)):
-            file.write('Memory at prompt ', i+1)
-            for prompt in chatlogs[i]:
+        for i in range(len(context_logs)):
+            file.write('Memory at prompt ' + str(i+1) + '\n\n')
+            for prompt in context_logs[i]:
                 if prompt['role'] == 'assistant':
-                    file.write('Assistant:\n' + prompt['content'] + '\n\n')
+                    file.write('Assistant:\n\n' + prompt['content'] + '\n\n')
                 elif prompt['role'] == 'user':
-                    file.write('User:\n' + prompt['content'] + '\n\n')
+                    file.write('User:\n\n' + prompt['content'] + '\n\n')
                 else:
-                    file.write('System:\n' + prompt['content'] + '\n\n')
+                    file.write('System:\n\n' + prompt['content'] + '\n\n')
 
     # Get feedback
     valid_numbers = set(['1', '2', '3', '4', '5', '6', '7'])
@@ -127,7 +125,7 @@ print('\nGM:\n\n' + startMessage)
 
 chatlogs = [{'role': 'assistant', 'content': startMessage}] # Full chat history
 memory = [{'role': 'assistant', 'content': startMessage}] # Model context
-context_logs = [{'role': 'assistant', 'content': startMessage}] # Memory history, what was in models memory at each prompt
+context_logs = [[{'role': 'assistant', 'content': startMessage}]] # Memory history, what was in models memory at each prompt
 
 # Summaries of overall story, these are updated in the Running_Summary and Hierarchical_Summary context methods
 summary = 'STORY SUMMARY: The player has woken up on a forest road with no memories and nothing but the clothes on their back and a small silver medallion shaped like a stylized wolf\'s head, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.'
@@ -139,9 +137,9 @@ tokens = 0
 # Core loop, prompting the Model to continue with the story until the player exits using Ctrl + C
 while True:
     if method == 'Full_Context':
-        tokens = full_history(chatlogs, context_logs, [rules] + [{'role': 'system', 'content': summary}] + memory, save, client, model, tokens)
+        tokens = full_history(chatlogs, context_logs, [rules, {'role': 'system', 'content': summary}] + memory, save, client, model, tokens)
     elif method == 'N_Latest':
-        tokens = n_latest(chatlogs, context_logs, [rules] + [{'role': 'system', 'content': summary}] + memory, save, client, model, tokens)
+        tokens = n_latest(chatlogs, context_logs, [rules, {'role': 'system', 'content': summary}] + memory, save, client, model, tokens)
     elif method == 'Running_Summary':
         tokens, summary = running_summary(chatlogs, context_logs, rules, save, client, model, summary, tokens)
     elif method == 'Hierarchical_Summary':

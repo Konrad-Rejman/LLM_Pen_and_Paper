@@ -6,10 +6,10 @@ def hierarchical_context(chatlogs, context_logs, rules, save, client, model, hie
         chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
 
         # Generate random rolls for model to use
-        rolls = rolls()
+        rolls_message = rolls()
 
         # Get response from model
-        memory = [rules, rolls, {'role': 'system', 'content': 'This is an overview of the story so far: ' + hierarchical_summary}, {'role': 'user',  'content': action}]
+        memory = [rules, rolls_message, {'role': 'system', 'content': 'This is an overview of the story so far: ' + hierarchical_summary}, {'role': 'user',  'content': action}]
         response = client.chat(model=model, messages=memory)
 
         # Save data
