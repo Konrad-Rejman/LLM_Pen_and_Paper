@@ -1,4 +1,4 @@
-import random
+from rolls import rolls
 
 def full_history(chatlogs, memory, save, client, model, tokens):
     try:
@@ -7,13 +7,7 @@ def full_history(chatlogs, memory, save, client, model, tokens):
         memory.append({'role': 'user',  'content': action})
 
         # Generate random rolls for model to use
-        rolls = {'role': 'system', 'content': 'Use the following random rolls for this interaction if needed: '}
-        roll_num = 5 # Number of random rolls to pass to model
-        for i in range(roll_num): 
-            r = random.randint(1, 20)
-            rolls['content'] = rolls['content'] + str(r)
-            if i < roll_num - 1:
-                rolls['content'] = rolls['content'] + ', '
+        rolls = rolls()
         memory.append(rolls) # Add rolls message to models memory
 
         # Get response from model

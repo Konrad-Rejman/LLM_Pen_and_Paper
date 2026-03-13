@@ -1,4 +1,4 @@
-import random
+from rolls import rolls
 
 def running_summary(chatlogs, rules, save, client, model, summary, tokens):
     try:
@@ -6,13 +6,7 @@ def running_summary(chatlogs, rules, save, client, model, summary, tokens):
         chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
 
         # Generate random rolls for model to use
-        rolls = {'role': 'system', 'content': 'Use the following random rolls for this interaction as needed: '}
-        roll_num = 5 # Number of random rolls to pass to model
-        for i in range(roll_num): 
-            r = random.randint(1, 20)
-            rolls['content'] = rolls['content'] + str(r)
-            if i < roll_num - 1:
-                rolls['content'] = rolls['content'] + ', '
+        rolls = rolls()
 
         # Get response from model
         memory = [rules, rolls, {'role': 'system', 'content': 'This is an overview of the story so far: ' + summary}, {'role': 'user',  'content': action}]
