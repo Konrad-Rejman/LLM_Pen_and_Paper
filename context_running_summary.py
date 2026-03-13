@@ -1,6 +1,6 @@
 from rolls import rolls
 
-def running_summary(chatlogs, rules, save, client, model, summary, tokens):
+def running_summary(chatlogs, context_logs, rules, save, client, model, summary, tokens):
     try:
         action = input('\nDescribe the players\' actions: ')
         chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
@@ -11,6 +11,9 @@ def running_summary(chatlogs, rules, save, client, model, summary, tokens):
         # Get response from model
         memory = [rules, rolls, {'role': 'system', 'content': 'This is an overview of the story so far: ' + summary}, {'role': 'user',  'content': action}]
         response = client.chat(model=model, messages=memory)
+
+        # Save data
+        context_logs.append(memory.copy()) # Append a copy of what the LLM had in memory at each prompt
         tokens += response.prompt_eval_count # Add tokens processed to token counter
         chatlogs.append({'role': 'assistant',  'content': response.message.content}) # Add GM response to chat history
 

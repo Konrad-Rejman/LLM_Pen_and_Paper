@@ -1,6 +1,6 @@
 from rolls import rolls
 
-def n_latest(chatlogs, memory, save, client, model, tokens, n=5):
+def n_latest(chatlogs, context_logs, memory, save, client, model, tokens, n=5):
     try:
         action = input('\nDescribe the player\'s actions: ')
         chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
@@ -12,9 +12,13 @@ def n_latest(chatlogs, memory, save, client, model, tokens, n=5):
 
         # Get response from model
         response = client.chat(model=model, messages=memory)
+
+        # Save data
+        context_logs.append(memory.copy()) # Append a copy of what the LLM had in memory at each prompt
         tokens += response.prompt_eval_count # Add tokens processed to token counter
         chatlogs.append({'role': 'assistant',  'content': response.message.content}) # Add GM response to chat history
         memory.append({'role': 'assistant',  'content': response.message.content})
+
         memory.remove(rolls) # Remove rolls message from memory
 
         print('\nGM:\n\n' + response.message.content)
