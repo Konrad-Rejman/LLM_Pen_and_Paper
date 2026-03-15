@@ -119,17 +119,19 @@ def save():
     df.to_csv('data.csv')
 
 # Model setup
-rules = {'role': 'system', 'content': 'RULES: Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, a list of random rolls will be provided for you to use (do not mention the list to the player, only use the rolls as if they were generated randomly). Provide your response in clear plaintext, WITHOUT any markdown or special characters such as hashtags or asterisks.'}
+rules = {'role': 'system', 'content': 'RULES: Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, a list of random rolls will be provided for you to use (do not mention the list to the player, only use the rolls as if they were generated randomly). Provide your response in clear plaintext, WITHOUT any markdown or special characters such as hashtags or asterisks (Do NOT use bold or italics: *, **, #).'}
 startMessage = "You stir as the first light of dawn filters through a canopy of tangled branches. The air is cold and damp, the scent of pine and earth filling your lungs. When you sit up, you find yourself lying on a rough, moss-covered road that cuts through the forest like a scar. The twisted wreckage of a caravan lies beside you.\n\nYour head throbs, and you realize you have no memory of who you are, how you got here, or why the caravan is ruined. The only clue is a faint, silver-etched token clutched in your hand—a small medallion shaped like a stylized wolf\'s head, warm to the touch. As you stare at the wreckage, you notice a faint trail of disturbed leaves and broken twigs snaking away from the caravan into the dense forest."
 print('\nGM:\n\n' + startMessage)
 
 chatlogs = [{'role': 'assistant', 'content': startMessage}] # Full chat history
-memory = [{'role': 'assistant', 'content': startMessage}] # Model context
 context_logs = [[{'role': 'assistant', 'content': startMessage}]] # Memory history, what was in models memory at each prompt
 
 # Summaries of overall story, these are updated in the Running_Summary and Hierarchical_Summary context methods
 summary = 'STORY SUMMARY: The player has woken up on a forest road with no memories and nothing but the clothes on their back and a small silver medallion shaped like a stylized wolf\'s head, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.'
 hierarchical_summary = 'OVERALL STORY: The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.\n\nCURRENT QUEST: The player is inside a forest beside a caravan which has been destroyed, a trail leads from the wreckage into the forest. The player must find a way out of the forest.\n\nPLAYER STATUS: The player has woken up with no memories and nothing but the clothes on their back and a small silver medallion shaped like a stylized wolf\'s head.'
+
+# Memory
+memory = [rules, {'role': 'system', 'content': summary}, {'role': 'assistant', 'content': startMessage}] # Model context
 
 # Initialise token counter
 tokens = 0
@@ -137,9 +139,9 @@ tokens = 0
 # Core loop, prompting the Model to continue with the story until the player exits using Ctrl + C
 while True:
     if method == 'Full_Context':
-        tokens = full_history(chatlogs, context_logs, [rules, {'role': 'system', 'content': summary}] + memory, save, client, model, tokens)
+        tokens, memory = full_history(chatlogs, context_logs, memory, save, client, model, tokens)
     elif method == 'N_Latest':
-        tokens = n_latest(chatlogs, context_logs, [rules, {'role': 'system', 'content': summary}] + memory, save, client, model, tokens)
+        tokens, memory = n_latest(chatlogs, context_logs, memory, save, client, model, tokens)
     elif method == 'Running_Summary':
         tokens, summary = running_summary(chatlogs, context_logs, rules, save, client, model, summary, tokens)
     elif method == 'Hierarchical_Summary':

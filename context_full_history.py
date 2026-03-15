@@ -8,7 +8,7 @@ def full_history(chatlogs, context_logs, memory, save, client, model, tokens):
 
         # Generate random rolls for model to use
         rolls_message = rolls()
-        memory.append(rolls_message) # Add rolls message to models memory
+        memory = [memory[0]] + [rolls_message] + memory[1:] # Add rolls message to models memory
 
         # Get response from model
         response = client.chat(model=model, messages=memory)
@@ -27,4 +27,4 @@ def full_history(chatlogs, context_logs, memory, save, client, model, tokens):
         save() # Save session data
         quit() # End program
 
-    return tokens
+    return tokens, memory
