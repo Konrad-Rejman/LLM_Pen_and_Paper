@@ -1,19 +1,30 @@
 from rolls import rolls
 
-def hierarchical_context(chatlogs, context_logs, rules, save, client, model, hierarchical_summary, tokens):
+def hierarchical_context(chatlogs, context_logs, rules, client, model, hierarchical_summary, tokens, save, backup):
     try:
-        action = input('\nDescribe the players\' actions: ')
-        chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
+        # If not loading from backup
+        if memory[-1]['role'] == 'user': 
+            action = input('\nDescribe the players\' actions: ')
+            chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
 
-        # Generate random rolls for model to use
-        rolls_message = rolls()
+            # Generate random rolls for model to use
+            rolls_message = rolls()
 
+            memory = [rules, rolls_message, {'role': 'system', 'content': 'This is an overview of the story so far: ' + hierarchical_summary}, {'role': 'user',  'content': action}]
+            
         # Get response from model
-        memory = [rules, rolls_message, {'role': 'system', 'content': 'This is an overview of the story so far: ' + hierarchical_summary}, {'role': 'user',  'content': action}]
-        response = client.chat(model=model, messages=memory)
+        try:
+            response = client.chat(model=model, messages=memory)
+        except KeyboardInterrupt:
+            save()
+            quit()
+        except Exception as e:
+            print(e)
+            backup(chatlogs, context_logs, memory, tokens)
+            quit()
 
         # Save data
-        context_logs.append(memory.copy()) # Append a copy of what the LLM had in memory at each prompt
+        context_logs.append([response.prompt_eval_count] + memory.copy()) # Append a copy of what the LLM had in memory at each prompt
         tokens += response.prompt_eval_count # Add tokens processed to token counter
         chatlogs.append({'role': 'assistant',  'content': response.message.content}) # Add GM response to chat history
 

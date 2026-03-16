@@ -1,4 +1,4 @@
-import ollama, os, random, time
+import ollama, os, random, time, pickle
 import pandas as pd
 from dotenv import load_dotenv
 from context_full_history import full_history
@@ -13,35 +13,42 @@ client = ollama.Client(host=os.getenv('HOSTURL'))
 # Models: ['qwen3:32b', 'gemma3:12b', 'deepseek-r1:32b', 'gpt-oss:120b', 'llama3.1:8b', 'llama3.2:latest', 'gpt-oss:latest']
 model = 'gpt-oss:120b'
 
-# Game start
-print('Press ctrl + c to exit.')
-print('The LLM will act as the Game Master (GM), play along by inputing your characters actions each turn and the LLM will respond with the outcome setting up the next turn.')
-print('Generating...')
+# Model setup
+rules = {'role': 'system', 'content': 'RULES: Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, a list of random rolls will be provided for you to use (do not mention the list to the player, only use the rolls as if they were generated randomly). Provide your response in clear plaintext, WITHOUT any markdown or special characters such as hashtags or asterisks (Do NOT use bold or italics: *, **, #).'}
+startMessage = "You stir as the first light of dawn filters through a canopy of tangled branches. The air is cold and damp, the scent of pine and earth filling your lungs. When you sit up, you find yourself lying on a rough, moss-covered road that cuts through the forest like a scar. The twisted wreckage of a caravan lies beside you.\n\nYour head throbs, and you realize you have no memory of who you are, how you got here, or why the caravan is ruined. The only clue is a faint, silver-etched token clutched in your hand—a small medallion shaped like a stylized wolf\'s head, warm to the touch. As you stare at the wreckage, you notice a faint trail of disturbed leaves and broken twigs snaking away from the caravan into the dense forest."
 
-# Get user identifier
-user = input('Enter your username (please use the same username for each session): ')
-starttime = time.time()
+# Conversation history
+chatlogs = [{'role': 'assistant', 'content': startMessage}] # Full chat history
+context_logs = [[0, {'role': 'assistant', 'content': startMessage}]] # Memory history, what was in models memory at each prompt
 
-# Choose a context method the user hasn't used yet randomly, else choose a random method
-context_methods = ['Full_Context', 'N_Latest', 'Running_Summary', 'Hierarchical_Summary'] # List of implemented methods
-random.shuffle(context_methods) # Randomise order of methods
+# Summaries of overall story, these are updated in the Running_Summary and Hierarchical_Summary context methods
+summary = 'STORY SUMMARY: The player has woken up on a forest road with no memories and nothing but the clothes on their back and a small silver medallion shaped like a stylized wolf\'s head, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.'
+hierarchical_summary = 'OVERALL STORY: The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.\n\nCURRENT QUEST: The player is inside a forest beside a caravan which has been destroyed, a trail leads from the wreckage into the forest. The player must find a way out of the forest.\n\nPLAYER STATUS: The player has woken up with no memories and nothing but the clothes on their back and a small silver medallion shaped like a stylized wolf\'s head.'
 
-# Check data file for users previous sessions
-df = pd.read_csv('data.csv', index_col=0)
-df = df[df['User'] == user]
+# Memory
+memory = [rules, {'role': 'system', 'content': summary}, {'role': 'assistant', 'content': startMessage}] # Model context
 
-# Choose a method the user hasn't seen yet, if possible
-method = None
+# Initialise token counter
+tokens = 0
 
-seen = set(v for i, v in df['Context Method'].items()) # Get set of context methods the user has seen already
+# Feedback collection
+def feedback():
+    valid_numbers = set(['1', '2', '3', '4', '5', '6', '7'])
 
-for m in context_methods:
-    if m not in seen: # If user has not seen context method, use that method
-        method = m
-        break
+    # Get feedback
+    print('On a scale of 1 - 7, how would you rate the completed session on the following:\n')
 
-if not method: # If user has used every context method at least once, choose a random method
-    method = random.choice(context_methods)
+    consistency = input('The GMs ability to maintain a consistent narrative: ')
+    adherence = input('The GMs ability to follow established rules: ')
+    creativity = input('The GMs creativity in storytelling: ')
+    enjoyment = input('Your overall enjoyment of the game session: ')
+
+    # If any of the values entered are not valid numbers
+    if consistency not in valid_numbers or adherence not in valid_numbers or creativity not in valid_numbers or enjoyment not in valid_numbers:
+        print('\nOne of the values you entered was not between 0 and 10, please try again.')
+        return feedback()
+    
+    return consistency, adherence, creativity, enjoyment
 
 # Run on exit
 def save():
@@ -75,7 +82,10 @@ def save():
         for i in range(len(context_logs)):
             file.write('Memory at prompt ' + str(i+1) + '\n\n')
             for prompt in context_logs[i]:
-                if prompt['role'] == 'assistant':
+                if isinstance(prompt, int):
+                    # Token usage at interaction i+1
+                    file.write('Token usage: ' + str(prompt) + '\n\n')
+                elif prompt['role'] == 'assistant':
                     file.write('Assistant:\n\n' + prompt['content'] + '\n\n')
                 elif prompt['role'] == 'user':
                     file.write('User:\n\n' + prompt['content'] + '\n\n')
@@ -83,22 +93,7 @@ def save():
                     file.write('System:\n\n' + prompt['content'] + '\n\n')
 
     # Get feedback
-    valid_numbers = set(['1', '2', '3', '4', '5', '6', '7'])
-
-    def feedback():
-        print('On a scale of 1 - 7, how would you rate the completed session on the following:\n')
-        global consistency, adherence, creativity, enjoyment
-        consistency = input('The GMs ability to maintain a consistent narrative: ')
-        adherence = input('The GMs ability to follow established rules: ')
-        creativity = input('The GMs creativity in storytelling: ')
-        enjoyment = input('Your overall enjoyment of the game session: ')
-
-        # If any of the values entered are not valid numbers
-        if consistency not in valid_numbers or adherence not in valid_numbers or creativity not in valid_numbers or enjoyment not in valid_numbers:
-            print('\nOne of the values you entered was not between 0 and 10, please try again.')
-            feedback()
-
-    feedback()
+    consistency, adherence, creativity, enjoyment = feedback()
 
     session_data = {
         'Session': [file_name], 
@@ -118,31 +113,85 @@ def save():
     df = pd.concat([df, new_row])
     df.to_csv('data.csv')
 
-# Model setup
-rules = {'role': 'system', 'content': 'RULES: Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, a list of random rolls will be provided for you to use (do not mention the list to the player, only use the rolls as if they were generated randomly). Provide your response in clear plaintext, WITHOUT any markdown or special characters such as hashtags or asterisks (Do NOT use bold or italics: *, **, #).'}
-startMessage = "You stir as the first light of dawn filters through a canopy of tangled branches. The air is cold and damp, the scent of pine and earth filling your lungs. When you sit up, you find yourself lying on a rough, moss-covered road that cuts through the forest like a scar. The twisted wreckage of a caravan lies beside you.\n\nYour head throbs, and you realize you have no memory of who you are, how you got here, or why the caravan is ruined. The only clue is a faint, silver-etched token clutched in your hand—a small medallion shaped like a stylized wolf\'s head, warm to the touch. As you stare at the wreckage, you notice a faint trail of disturbed leaves and broken twigs snaking away from the caravan into the dense forest."
-print('\nGM:\n\n' + startMessage)
+# Backup function, run if session is interrupted unexpectedly
+def backup(chatlogs, context_logs, memory, tokens):
+    # Save backup data
+    backup_data = {
+        'User': user,
+        'Context Method': method,
+        'Chat Logs': chatlogs,
+        'Context Logs': context_logs,
+        'Tokens': tokens,
+        'Starttime': starttime,
+        'Memory': memory,
+        'Summary': summary,
+        'Hierarchical Summary': hierarchical_summary
+    }
+    pickle.dump(backup_data, open('backup.pkl', 'wb'))
 
-chatlogs = [{'role': 'assistant', 'content': startMessage}] # Full chat history
-context_logs = [[{'role': 'assistant', 'content': startMessage}]] # Memory history, what was in models memory at each prompt
+# Check if backup exists, if so then carry on interrupted session
+if 'backup.pkl' in os.listdir():
+    # Load backup data
+    backup_data = pickle.load(open('backup.pkl', 'rb'))
 
-# Summaries of overall story, these are updated in the Running_Summary and Hierarchical_Summary context methods
-summary = 'STORY SUMMARY: The player has woken up on a forest road with no memories and nothing but the clothes on their back and a small silver medallion shaped like a stylized wolf\'s head, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.'
-hierarchical_summary = 'OVERALL STORY: The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.\n\nCURRENT QUEST: The player is inside a forest beside a caravan which has been destroyed, a trail leads from the wreckage into the forest. The player must find a way out of the forest.\n\nPLAYER STATUS: The player has woken up with no memories and nothing but the clothes on their back and a small silver medallion shaped like a stylized wolf\'s head.'
+    user = backup_data['User']
+    method = backup_data['Context Method']
+    chatlogs = backup_data['Chat Logs']
+    context_logs = backup_data['Context Logs']
+    tokens = backup_data['Tokens']
+    starttime = backup_data['Starttime']
+    memory = backup_data['Memory']
+    summary = backup_data['Summary']
+    hierarchical_summary = backup_data['Hierarchical Summary']
 
-# Memory
-memory = [rules, {'role': 'system', 'content': summary}, {'role': 'assistant', 'content': startMessage}] # Model context
+    while True:
+        if method == 'Full_Context':
+            tokens, memory = full_history(chatlogs, context_logs, memory, client, model, tokens, save, backup)
+        elif method == 'N_Latest':
+            tokens, memory = n_latest(chatlogs, context_logs, memory, client, model, tokens, save, backup)
+        elif method == 'Running_Summary':
+            tokens, summary = running_summary(chatlogs, context_logs, rules, client, model, summary, tokens, save, backup)
+        elif method == 'Hierarchical_Summary':
+            tokens, hierarchical_summary = hierarchical_context(chatlogs, context_logs, rules, client, model, hierarchical_summary, tokens, save, backup)
 
-# Initialise token counter
-tokens = 0
+# Game start
+print('Press ctrl + c to exit.')
+print('The LLM will act as the Game Master (GM), play along by inputing your characters actions each turn and the LLM will respond with the outcome setting up the next turn.')
+print('Generating...')
+
+# Get user identifier
+user = input('Enter your username (please use the same username for each session): ')
+starttime = time.time()
+
+# Choose a context method the user hasn't used yet randomly, else choose a random method
+context_methods = ['Full_Context', 'N_Latest', 'Running_Summary', 'Hierarchical_Summary'] # List of implemented methods
+random.shuffle(context_methods) # Randomise order of methods
+
+# Check data file for users previous sessions
+df = pd.read_csv('data.csv', index_col=0)
+df = df[df['User'] == user]
+
+# Choose a method the user hasn't seen yet, if possible
+method = None
+
+seen = set(v for i, v in df['Context Method'].items()) # Get set of context methods the user has seen already
+
+for m in context_methods:
+    if m not in seen: # If user has not seen context method, use that method
+        method = m
+        break
+
+if not method: # If user has used every context method at least once, choose a random method
+    method = random.choice(context_methods)
 
 # Core loop, prompting the Model to continue with the story until the player exits using Ctrl + C
+print('\nGM:\n\n' + startMessage)
 while True:
     if method == 'Full_Context':
-        tokens, memory = full_history(chatlogs, context_logs, memory, save, client, model, tokens)
+        tokens, memory = full_history(chatlogs, context_logs, memory, client, model, tokens, save, backup)
     elif method == 'N_Latest':
-        tokens, memory = n_latest(chatlogs, context_logs, memory, save, client, model, tokens)
+        tokens, memory = n_latest(chatlogs, context_logs, memory, client, model, tokens, save, backup)
     elif method == 'Running_Summary':
-        tokens, summary = running_summary(chatlogs, context_logs, rules, save, client, model, summary, tokens)
+        tokens, summary = running_summary(chatlogs, context_logs, rules, client, model, summary, tokens, save, backup)
     elif method == 'Hierarchical_Summary':
-        tokens, hierarchical_summary = hierarchical_context(chatlogs, context_logs, rules, save, client, model, hierarchical_summary, tokens)
+        tokens, hierarchical_summary = hierarchical_context(chatlogs, context_logs, rules, client, model, hierarchical_summary, tokens, save, backup)
