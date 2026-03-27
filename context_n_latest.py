@@ -2,19 +2,17 @@ from rolls import rolls
 
 def n_latest(chatlogs, context_logs, memory, client, model, tokens, save, backup, n=5):
     try:
-        # If not loading from backup
-        if memory[-1]['role'] == 'user': 
-            action = input('\nDescribe the player\'s actions: ')
-            chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
-            memory.append({'role': 'user',  'content': action})
+        action = input('\nDescribe the player\'s actions: ')
+        chatlogs.append({'role': 'user',  'parts': [{'text': action}]}) # Add Player input to chat history
+        memory.append({'role': 'user',  'parts': [{'text': action}]})
 
-            # Generate random rolls for model to use
-            rolls_message = rolls()
-            memory = [memory[0]] + [rolls_message] + memory[1:] # Add rolls message to models memory
+        # Generate random rolls for model to use
+        rolls_message = rolls()
+        memory = [memory[0]] + [rolls_message] + memory[1:] # Add rolls message to models memory
 
         # Get response from model
         try:
-            response = client.chat(model=model, messages=memory)
+            response = client.models.generate_content(model=model, contents=memory)
         except KeyboardInterrupt:
             save()
             quit()
@@ -24,14 +22,14 @@ def n_latest(chatlogs, context_logs, memory, client, model, tokens, save, backup
             quit()
 
         # Save data
-        context_logs.append([response.prompt_eval_count] + memory.copy()) # Append a copy of what the LLM had in memory at each prompt
-        tokens += response.prompt_eval_count # Add tokens processed to token counter
-        chatlogs.append({'role': 'assistant',  'content': response.message.content}) # Add GM response to chat history
-        memory.append({'role': 'assistant',  'content': response.message.content})
+        context_logs.append([response.usage_metadata.prompt_token_count] + memory.copy()) # Append a copy of what the LLM had in memory at each prompt
+        tokens += response.usage_metadata.prompt_token_count # Add tokens processed to token counter
+        chatlogs.append({'role': 'model',  'parts': [{'text': response.text}]}) # Add GM response to chat history
+        memory.append({'role': 'model',  'parts': [{'text': response.text}]})
 
         memory.remove(rolls_message) # Remove rolls message from memory
 
-        print('\nGM:\n\n' + response.message.content)
+        print('\nGM:\n\n' + response.text)
 
         # If memory is more than last n interactions (GM, Player) excluding rules and summary, remove earliest interactions
         if len(memory[2:]) > 2*n:

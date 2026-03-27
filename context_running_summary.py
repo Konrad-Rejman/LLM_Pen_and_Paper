@@ -2,19 +2,17 @@ from rolls import rolls
 
 def running_summary(chatlogs, context_logs, rules, client, model, summary, tokens, save, backup):
     try:
-        # If not loading from backup
-        if memory[-1]['role'] == 'user': 
-            action = input('\nDescribe the players\' actions: ')
-            chatlogs.append({'role': 'user',  'content': action}) # Add Player input to chat history
+        action = input('\nDescribe the players\' actions: ')
+        chatlogs.append({'role': 'user',  'parts': [{'text': action}]}) # Add Player input to chat history
 
-            # Generate random rolls for model to use
-            rolls_message = rolls()
+        # Generate random rolls for model to use
+        rolls_message = rolls()
 
-            memory = [rules, rolls_message, {'role': 'system', 'content': 'This is an overview of the story so far: ' + summary}, {'role': 'user',  'content': action}]
+        memory = [rules, rolls_message, {'role': 'user', 'parts': [{'text': 'This is an overview of the story so far: ' + summary}]}, {'role': 'user',  'parts': [{'text': action}]}]
         
         # Get response from model
         try:
-            response = client.chat(model=model, messages=memory)
+            response = client.models.generate_content(model=model, contents=memory)
         except KeyboardInterrupt:
             save()
             quit()
@@ -24,21 +22,21 @@ def running_summary(chatlogs, context_logs, rules, client, model, summary, token
             quit()
 
         # Save data
-        context_logs.append([response.prompt_eval_count] + memory.copy()) # Append a copy of what the LLM had in memory at each prompt
-        tokens += response.prompt_eval_count # Add tokens processed to token counter
-        chatlogs.append({'role': 'assistant',  'content': response.message.content}) # Add GM response to chat history
+        context_logs.append([response.usage_metadata.prompt_token_count] + memory.copy()) # Append a copy of what the LLM had in memory at each prompt
+        tokens += response.usage_metadata.prompt_token_count # Add tokens processed to token counter
+        chatlogs.append({'role': 'model',  'parts': [{'text': response.text}]}) # Add GM response to chat history
 
-        print('\nGM:\n\n' + response.message.content)
+        print('\nGM:\n\n' + response.text)
 
         # Update the summary based on most recent context
-        instructions = {'role': 'system', 'content': 'Update the following Summary without removing the capitalised heading: ' + summary}
-        memory = [instructions, {'role': 'user',  'content': action}]
-        new_summary = client.chat(model=model, messages=memory)
-        tokens += new_summary.prompt_eval_count # Add tokens processed to token counter
-        summary = new_summary.message.content
+        instructions = {'role': 'user', 'parts': [{'text': 'Update the following Summary without removing the capitalised heading ' + summary}]}
+        memory = [instructions, {'role': 'user',  'parts': [{'text': action}]}]
+        new_summary = client.models.generate_content(model=model, contents=memory)
+        tokens += new_summary.usage_metadata.prompt_token_count # Add tokens processed to token counter
+        summary = new_summary.text
     
     except KeyboardInterrupt:
         save() # Save session data
         quit() # End program
 
-    return tokens, summary
+    return tokens, memory, summary

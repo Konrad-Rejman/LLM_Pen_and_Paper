@@ -12,6 +12,7 @@ You will need the following packages installed in order to run the program:
 2. ollama
 2. pandas
 3. dotenv
+4. google-genai
 
 You can check for dependencies in the requirements.txt file.
 

@@ -1,4 +1,5 @@
-import ollama, os, random, time, pickle
+import google.genai as genai
+import os, random, time, pickle
 import pandas as pd
 from dotenv import load_dotenv
 from context_full_history import full_history
@@ -8,25 +9,23 @@ from context_hierarchical_context_injection import hierarchical_context
 
 load_dotenv()
 
-client = ollama.Client(host=os.getenv('HOSTURL'))
-
-# Models: ['qwen3:32b', 'gemma3:12b', 'deepseek-r1:32b', 'gpt-oss:120b', 'llama3.1:8b', 'llama3.2:latest', 'gpt-oss:latest']
-model = 'gpt-oss:120b'
+client = genai.Client(api_key=os.getenv('APIKEY'))
+model = 'gemini-2.5-flash'
 
 # Model setup
-rules = {'role': 'system', 'content': 'RULES: Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, a list of random rolls will be provided for you to use (do not mention the list to the player, only use the rolls as if they were generated randomly). Provide your response in clear plaintext, WITHOUT any markdown or special characters such as hashtags or asterisks (Do NOT use bold or italics: *, **, #).'}
+rules = {'role': 'user', 'parts': [{'text': 'RULES: Act as the GameMaster for the following pen and paper game, with the user acting as player from now on. Resolve the outcome of player actions by simulating a dice roll for the player, a list of random rolls will be provided for you to use (do not mention the list to the player, only use the rolls as if they were generated randomly). Provide your response in clear plaintext, WITHOUT any markdown or special characters such as hashtags or asterisks (Do NOT use bold or italics: *, **, #).'}]}
 startMessage = "You stir as the first light of dawn filters through a canopy of tangled branches. The air is cold and damp, the scent of pine and earth filling your lungs. When you sit up, you find yourself lying on a rough, moss-covered road that cuts through the forest like a scar. The twisted wreckage of a caravan lies beside you.\n\nYour head throbs, and you realize you have no memory of who you are, how you got here, or why the caravan is ruined. The only clue is a faint, silver-etched token clutched in your hand—a small medallion shaped like a stylized wolf\'s head, warm to the touch. As you stare at the wreckage, you notice a faint trail of disturbed leaves and broken twigs snaking away from the caravan into the dense forest."
 
 # Conversation history
-chatlogs = [{'role': 'assistant', 'content': startMessage}] # Full chat history
-context_logs = [[0, {'role': 'assistant', 'content': startMessage}]] # Memory history, what was in models memory at each prompt
+chatlogs = [{'role': 'model', 'parts': [{'text': startMessage}]}] # Full chat history
+context_logs = [[0, {'role': 'model', 'parts': [{'text': startMessage}]}]] # Memory history, what was in models memory at each prompt
 
 # Summaries of overall story, these are updated in the Running_Summary and Hierarchical_Summary context methods
 summary = 'STORY SUMMARY: The player has woken up on a forest road with no memories and nothing but the clothes on their back and a small silver medallion shaped like a stylized wolf\'s head, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.'
 hierarchical_summary = 'OVERALL STORY: The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.\n\nCURRENT QUEST: The player is inside a forest beside a caravan which has been destroyed, a trail leads from the wreckage into the forest. The player must find a way out of the forest.\n\nPLAYER STATUS: The player has woken up with no memories and nothing but the clothes on their back and a small silver medallion shaped like a stylized wolf\'s head.'
 
 # Memory
-memory = [rules, {'role': 'system', 'content': summary}, {'role': 'assistant', 'content': startMessage}] # Model context
+memory = [rules, {'role': 'user', 'parts': [{'text': summary}]}, {'role': 'model', 'parts': [{'text': startMessage}]}] # Model context
 
 # Initialise token counter
 tokens = 0
@@ -68,10 +67,10 @@ def save():
     # Write a file containing the session chatlogs
     with open(file_path, 'w', encoding='utf-8') as file:
         for prompt in chatlogs:
-            if prompt['role'] == 'assistant':
-                file.write('GM:\n\n' + prompt['content'] + '\n\n')
+            if prompt['role'] == 'model':
+                file.write('GM:\n\n' + prompt['parts'][0]['text'] + '\n\n')
             elif prompt['role'] == 'user':
-                file.write('PLAYER:\n\n' + prompt['content'] + '\n\n')
+                file.write('PLAYER:\n\n' + prompt['parts'][0]['text'] + '\n\n')
     
     # Construct contextlogs file name
     file_name = str(file_number) + '_' + method + '_' + user + '_' + 'Context_Logs'
@@ -85,12 +84,12 @@ def save():
                 if isinstance(prompt, int):
                     # Token usage at interaction i+1
                     file.write('Token usage: ' + str(prompt) + '\n\n')
-                elif prompt['role'] == 'assistant':
-                    file.write('Assistant:\n\n' + prompt['content'] + '\n\n')
+                elif prompt['role'] == 'model':
+                    file.write('Model:\n\n' + prompt['parts'][0]['text'] + '\n\n')
                 elif prompt['role'] == 'user':
-                    file.write('User:\n\n' + prompt['content'] + '\n\n')
+                    file.write('User:\n\n' + prompt['parts'][0]['text'] + '\n\n')
                 else:
-                    file.write('System:\n\n' + prompt['content'] + '\n\n')
+                    file.write('Other:\n\n' + prompt['parts'][0]['text'] + '\n\n')
 
     # Get feedback
     consistency, adherence, creativity, enjoyment = feedback()
