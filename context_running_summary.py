@@ -8,7 +8,7 @@ def running_summary(chatlogs, context_logs, rules, client, model, summary, token
         # Generate random rolls for model to use
         rolls_message = rolls()
 
-        memory = [rules, rolls_message, {'role': 'user', 'parts': [{'text': 'This is an overview of the story so far: ' + summary}]}, {'role': 'user',  'parts': [{'text': action}]}]
+        memory = [rules, rolls_message, {'role': 'user', 'parts': [{'text': summary}]}, {'role': 'user',  'parts': [{'text': action}]}]
         
         # Get response from model
         try:
@@ -30,8 +30,8 @@ def running_summary(chatlogs, context_logs, rules, client, model, summary, token
 
         # Update the summary based on most recent context
         instructions = {'role': 'user', 'parts': [{'text': 'Update the following Summary without removing the capitalised heading ' + summary}]}
-        memory = [instructions, {'role': 'user',  'parts': [{'text': action}]}]
-        new_summary = client.models.generate_content(model=model, contents=memory)
+        update = [instructions, {'role': 'user',  'parts': [{'text': action}]}]
+        new_summary = client.models.generate_content(model=model, contents=update)
         tokens += new_summary.usage_metadata.prompt_token_count # Add tokens processed to token counter
         summary = new_summary.text
     

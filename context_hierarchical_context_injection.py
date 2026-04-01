@@ -8,7 +8,7 @@ def hierarchical_context(chatlogs, context_logs, rules, client, model, hierarchi
         # Generate random rolls for model to use
         rolls_message = rolls()
 
-        memory = [rules, rolls_message, {'role': 'user', 'parts': [{'text': 'This is an overview of the story so far: ' + hierarchical_summary}]}, {'role': 'user',  'parts': [{'text': action}]}]
+        memory = [rules, rolls_message, {'role': 'user', 'parts': [{'text': hierarchical_summary}]}, {'role': 'user',  'parts': [{'text': action}]}]
         
         # Get response from model
         try:
@@ -30,8 +30,8 @@ def hierarchical_context(chatlogs, context_logs, rules, client, model, hierarchi
 
         # Update the summary based on most recent context
         instructions = {'role': 'user', 'parts': [{'text': 'Update the following Summary without removing its current headings or changing its current structure (OVERALL STORY, CURRENT QUEST, PLAYER STATUS): ' + hierarchical_summary}]}
-        memory = [instructions, {'role': 'user',  'parts': [{'text': action}]}]
-        new_hierarchical_summary = client.models.generate_content(model=model, contents=memory)
+        update = [instructions, {'role': 'user',  'parts': [{'text': action}]}]
+        new_hierarchical_summary = client.models.generate_content(model=model, contents=update)
         tokens += new_hierarchical_summary.usage_metadata.prompt_token_count # Add tokens processed to token counter
         hierarchical_summary = new_hierarchical_summary.text
 
