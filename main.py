@@ -123,6 +123,9 @@ def save():
     # Get feedback
     consistency, adherence, creativity, enjoyment = feedback()
 
+    # Add endtime to last session
+    playtime[-1].append(time.time())
+
     session_data = {
         'Session': [file_name], 
         'User': [user],
@@ -132,7 +135,7 @@ def save():
         'Creativity (1-7)': [creativity], 
         'Enjoyment (1-7)': [enjoyment], 
         'Tokens': [tokens], 
-        'Playtime (s)': [round(time.time() - starttime)]
+        'Playtime (s)': [sum(round(s[1] - s[0]) for s in playtime)] # Sum session endtime-starttime for each session
     }
     new_row = pd.DataFrame(session_data)
 
@@ -143,6 +146,9 @@ def save():
 
 # Backup function, run if session is interrupted unexpectedly
 def backup(chatlogs, context_logs, memory, tokens):
+    # Adjust playtime
+    playtime[-1].append(time.time()) # Add current time as endtime to last session
+
     # Save backup data
     backup_data = {
         'User': user,
@@ -150,7 +156,7 @@ def backup(chatlogs, context_logs, memory, tokens):
         'Chat Logs': chatlogs,
         'Context Logs': context_logs,
         'Tokens': tokens,
-        'Starttime': starttime,
+        'Playtime': playtime,
         'Memory': memory,
         'Summary': summary,
         'Hierarchical Summary': hierarchical_summary
@@ -167,7 +173,8 @@ if 'backup.pkl' in os.listdir():
     chatlogs = backup_data['Chat Logs']
     context_logs = backup_data['Context Logs']
     tokens = backup_data['Tokens']
-    starttime = backup_data['Starttime']
+    playtime = backup_data['Playtime']
+    playtime.append([time.time()]) # Add current session starttime
     memory = backup_data['Memory']
     summary = backup_data['Summary']
     hierarchical_summary = backup_data['Hierarchical Summary']
@@ -189,7 +196,7 @@ print('Generating...')
 
 # Get user identifier
 user = input('Enter your username (please use the same username for each session): ')
-starttime = time.time()
+playtime = [[time.time()]]
 
 # Choose a context method the user hasn't used yet randomly, else choose a random method
 context_methods = ['Full_Context', 'N_Latest', 'Running_Summary', 'Hierarchical_Summary'] # List of implemented methods

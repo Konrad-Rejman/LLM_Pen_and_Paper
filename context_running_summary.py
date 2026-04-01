@@ -38,5 +38,10 @@ def running_summary(chatlogs, context_logs, rules, client, model, summary, token
     except KeyboardInterrupt:
         save() # Save session data
         quit() # End program
+    
+    except Exception as e:
+        print(e)
+        backup(chatlogs, context_logs, memory, tokens)
+        quit()
 
     return tokens, memory, summary

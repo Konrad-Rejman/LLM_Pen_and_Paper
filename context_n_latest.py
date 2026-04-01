@@ -39,4 +39,9 @@ def n_latest(chatlogs, context_logs, memory, client, model, tokens, save, backup
         save() # Save session data
         quit() # End program
     
+    except Exception as e:
+        print(e)
+        backup(chatlogs, context_logs, memory, tokens)
+        quit()
+    
     return tokens, memory
