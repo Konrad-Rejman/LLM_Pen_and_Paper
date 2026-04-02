@@ -32,7 +32,7 @@ def n_latest(chatlogs, context_logs, memory, client, model, tokens, save, backup
         print('\nGM:\n\n' + response.text)
 
         # If memory is more than last n interactions (GM, Player) excluding rules and summary, remove earliest interactions
-        if len(memory[2:]) > 2*n:
+        if len(memory[1:]) > 2*n:
             memory = [memory[0]] + memory[-2*n:] # memory = rules + last n interactions
         
     except KeyboardInterrupt:

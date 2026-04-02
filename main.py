@@ -24,7 +24,7 @@ RULES:
 3. Never mention being an AI or language model.
 
 DICE SYSTEM:
-4. Every chance based action must use a D20 roll to resolve the outcome of the action.
+4. Every chance based action must use a D20 roll to resolve the outcome of the action. For example, "rolling a Perception check you rolled a... 15, revealing goblins hiding in the woods around you."
 5. Use the provided list of rolls in order, consuming one value per roll.
 6. Do not generate your own random numbers.
 7. Do not mention the existence of the roll list.
@@ -43,15 +43,20 @@ GAMEPLAY:
 ENFORCEMENT:
 15. Correct the response before outputting if any of these rules would be broken by the output.'''
 }]}
-startMessage = 'You stir as the first light of dawn filters through a canopy of tangled branches. The air is cold and damp, the scent of pine and earth filling your lungs. When you sit up, you find yourself lying on a rough, moss-covered road that cuts through the forest like a scar. The twisted wreckage of a caravan lies beside you.\n\nYour head throbs, and you realize you have no memory of who you are, how you got here, or why the caravan is ruined. The only clue is a faint, silver-etched token clutched in your hand—a small medallion shaped like a stylized wolf\'s head, warm to the touch. As you stare at the wreckage, you notice a faint trail of disturbed leaves and broken twigs snaking away from the caravan into the dense forest.'
+
+startMessage = '''You stir as the first light of dawn filters through a canopy of tangled branches. The air is cold and damp, the scent of pine and earth filling your lungs. When you sit up, you find yourself lying on a rough, moss-covered road that cuts through the forest like a scar. The twisted wreckage of a caravan lies beside you.
+
+Your head throbs as you try to remember what has happened, rolling a Wisdom check you roll a... 9 and realize you have no memory of who you are, how you got here, or why the caravan is ruined. 
+
+The only clue is a faint, silver-etched token clutched in your hand—a small medallion shaped like a stylized wolf\'s head, warm to the touch. As you stare at the wreckage, you notice a faint trail of disturbed leaves and broken twigs snaking away from the caravan into the dense forest.'''
 
 # Conversation history
 chatlogs = [{'role': 'model', 'parts': [{'text': startMessage}]}] # Full chat history
 context_logs = [[0, {'role': 'model', 'parts': [{'text': startMessage}]}]] # Memory history, what was in models memory at each prompt
 
 # Summaries of overall story, these are updated in the Running_Summary and Hierarchical_Summary context methods
-summary = 'STORY SUMMARY: The player has woken up on a forest road with no memories and nothing but the clothes on their back and a small silver medallion shaped like a stylized wolf\'s head, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.'
-hierarchical_summary = 'OVERALL STORY: The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.\n\nCURRENT QUEST: The player is inside a forest beside a caravan which has been destroyed, a trail leads from the wreckage into the forest. The player must find a way out of the forest.\n\nPLAYER STATUS: The player has woken up with no memories and nothing but the clothes on their back and a small silver medallion shaped like a stylized wolf\'s head.'
+summary = 'STORY SUMMARY: The player has woken up on a forest road with no memories and nothing but the clothes on their back and a small silver medallion shaped like a stylized wolf\'s head, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. The player rolled a Wisdom check resulting in a 9, revealing no clues as to their identity. The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.'
+hierarchical_summary = 'OVERALL STORY: The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.\n\nCURRENT QUEST: The player is inside a forest beside a caravan which has been destroyed, a trail leads from the wreckage into the forest. The player rolled a Wisdom check resulting in a 9, revealing no clues as to their identity. The player must find a way out of the forest.\n\nPLAYER STATUS: The player has woken up with no memories and nothing but the clothes on their back and a small silver medallion shaped like a stylized wolf\'s head.'
 
 # Memory
 memory = [rules, {'role': 'user', 'parts': [{'text': summary}]}, {'role': 'model', 'parts': [{'text': startMessage}]}] # Model context
