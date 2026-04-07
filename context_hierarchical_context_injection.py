@@ -44,8 +44,6 @@ def hierarchical_context(chatlogs, context_logs, memory, rules, client, model, h
         tokens += response.usage_metadata.prompt_token_count # Add tokens processed to token counter
         chatlogs.append({'role': 'model',  'parts': [{'text': response.text}]}) # Add GM response to chat history
 
-        print('\nGM:\n\n' + response.text)
-
         # Update the summary based on most recent context
         instructions = {'role': 'user', 'parts': [{'text': 'Update the following Summary without removing its current headings or changing its current structure (OVERALL STORY, CURRENT QUEST, PLAYER STATUS): ' + hierarchical_summary}]}
         update = [instructions, {'role': 'user',  'parts': [{'text': action}]}]
@@ -72,6 +70,8 @@ def hierarchical_context(chatlogs, context_logs, memory, rules, client, model, h
                         quit()
         tokens += new_hierarchical_summary.usage_metadata.prompt_token_count # Add tokens processed to token counter
         hierarchical_summary = new_hierarchical_summary.text
+
+        print('\nGM:\n\n' + response.text)
 
     except KeyboardInterrupt:
         save() # Save session data

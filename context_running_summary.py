@@ -43,8 +43,6 @@ def running_summary(chatlogs, context_logs, memory, rules, client, model, summar
         tokens += response.usage_metadata.prompt_token_count # Add tokens processed to token counter
         chatlogs.append({'role': 'model',  'parts': [{'text': response.text}]}) # Add GM response to chat history
 
-        print('\nGM:\n\n' + response.text)
-
         # Update the summary based on most recent context
         instructions = {'role': 'user', 'parts': [{'text': 'Update the following Summary without removing the capitalised heading ' + summary}]}
         update = [instructions, {'role': 'user',  'parts': [{'text': action}]}]
@@ -71,6 +69,8 @@ def running_summary(chatlogs, context_logs, memory, rules, client, model, summar
                         quit()
         tokens += new_summary.usage_metadata.prompt_token_count # Add tokens processed to token counter
         summary = new_summary.text
+
+        print('\nGM:\n\n' + response.text)
     
     except KeyboardInterrupt:
         save() # Save session data

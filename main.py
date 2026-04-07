@@ -52,7 +52,7 @@ The only clue is a faint, silver-etched token clutched in your hand—a small me
 
 # Conversation history
 chatlogs = [{'role': 'model', 'parts': [{'text': startMessage}]}] # Full chat history
-context_logs = [[0, {'role': 'model', 'parts': [{'text': startMessage}]}]] # Memory history, what was in models memory at each prompt
+context_logs = [] # Memory history, what was in models memory at each prompt
 
 # Summaries of overall story, these are updated in the Running_Summary and Hierarchical_Summary context methods
 summary = 'STORY SUMMARY: The player has woken up on a forest road with no memories and nothing but the clothes on their back and a small silver medallion shaped like a stylized wolf\'s head, they are beside a caravan which has been destroyed, a trail leads from the wreckage into the forest surrounding them. The player rolled a Wisdom check resulting in a 9, revealing no clues as to their identity. The player must find civilization and uncover clues as to their identity along the way, they should also be given the chance to help the people they encounter by fighting monsters.'
