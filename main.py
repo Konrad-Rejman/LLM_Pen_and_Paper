@@ -190,9 +190,9 @@ if 'backup.pkl' in os.listdir():
         elif method == 'N_Latest':
             tokens, memory = n_latest(chatlogs, context_logs, memory, client, model, tokens, save, backup)
         elif method == 'Running_Summary':
-            tokens, memory, summary = running_summary(chatlogs, context_logs, rules, client, model, summary, tokens, save, backup)
+            tokens, memory, summary = running_summary(chatlogs, context_logs, memory, rules, client, model, summary, tokens, save, backup)
         elif method == 'Hierarchical_Summary':
-            tokens, memory, hierarchical_summary = hierarchical_context(chatlogs, context_logs, rules, client, model, hierarchical_summary, tokens, save, backup)
+            tokens, memory, hierarchical_summary = hierarchical_context(chatlogs, context_logs, memory, rules, client, model, hierarchical_summary, tokens, save, backup)
 
 # Game start
 print('Press ctrl + c to exit.')
@@ -232,6 +232,6 @@ while True:
     elif method == 'N_Latest':
         tokens, memory = n_latest(chatlogs, context_logs, memory, client, model, tokens, save, backup)
     elif method == 'Running_Summary':
-        tokens, memory, summary = running_summary(chatlogs, context_logs, rules, client, model, summary, tokens, save, backup)
+        tokens, memory, summary = running_summary(chatlogs, context_logs, memory, rules, client, model, summary, tokens, save, backup)
     elif method == 'Hierarchical_Summary':
-        tokens, memory, hierarchical_summary = hierarchical_context(chatlogs, context_logs, rules, client, model, hierarchical_summary, tokens, save, backup)
+        tokens, memory, hierarchical_summary = hierarchical_context(chatlogs, context_logs, memory, rules, client, model, hierarchical_summary, tokens, save, backup)

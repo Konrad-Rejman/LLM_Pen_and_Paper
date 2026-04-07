@@ -1,7 +1,13 @@
 from rolls import rolls
+import time, copy
 
 def full_history(chatlogs, context_logs, memory, client, model, tokens, save, backup):
     try:
+        old_chatlogs = copy.deepcopy(chatlogs)
+        old_context_logs = copy.deepcopy(context_logs)
+        old_memory = copy.deepcopy(memory)
+        old_tokens = copy.deepcopy(tokens)
+
         action = input('\nDescribe the player\'s actions: ')
         chatlogs.append({'role': 'user',  'parts': [{'text': action}]}) # Add Player input to chat history
         memory.append({'role': 'user',  'parts': [{'text': action}]})
@@ -17,9 +23,21 @@ def full_history(chatlogs, context_logs, memory, client, model, tokens, save, ba
             save()
             quit()
         except Exception as e:
-            print(e)
-            backup(chatlogs, context_logs, memory, tokens)
-            quit()
+            try:
+                time.sleep(1.1)
+                response = client.models.generate_content(model=model, contents=memory)
+            except:
+                try:
+                    time.sleep(2.1)
+                    response = client.models.generate_content(model=model, contents=memory)
+                except:
+                    try:
+                        time.sleep(4.1)
+                        response = client.models.generate_content(model=model, contents=memory)
+                    except Exception as e:
+                        print(e)
+                        backup(old_chatlogs, old_context_logs, old_memory, old_tokens)
+                        quit()
         
         # Save data
         context_logs.append([response.usage_metadata.prompt_token_count] + memory.copy()) # Append a copy of what the LLM had in memory at each prompt
@@ -37,7 +55,7 @@ def full_history(chatlogs, context_logs, memory, client, model, tokens, save, ba
     
     except Exception as e:
         print(e)
-        backup(chatlogs, context_logs, memory, tokens)
+        backup(old_chatlogs, old_context_logs, old_memory, old_tokens)
         quit()
 
     return tokens, memory

@@ -1,7 +1,13 @@
 from rolls import rolls
+import time, copy
 
-def hierarchical_context(chatlogs, context_logs, rules, client, model, hierarchical_summary, tokens, save, backup):
+def hierarchical_context(chatlogs, context_logs, memory, rules, client, model, hierarchical_summary, tokens, save, backup):
     try:
+        old_chatlogs = copy.deepcopy(chatlogs)
+        old_context_logs = copy.deepcopy(context_logs)
+        old_memory = copy.deepcopy(memory)
+        old_tokens = copy.deepcopy(tokens)
+
         action = input('\nDescribe the players\' actions: ')
         chatlogs.append({'role': 'user',  'parts': [{'text': action}]}) # Add Player input to chat history
 
@@ -17,9 +23,21 @@ def hierarchical_context(chatlogs, context_logs, rules, client, model, hierarchi
             save()
             quit()
         except Exception as e:
-            print(e)
-            backup(chatlogs, context_logs, memory, tokens)
-            quit()
+            try:
+                time.sleep(1.1)
+                response = client.models.generate_content(model=model, contents=memory)
+            except:
+                try:
+                    time.sleep(2.1)
+                    response = client.models.generate_content(model=model, contents=memory)
+                except:
+                    try:
+                        time.sleep(4.1)
+                        response = client.models.generate_content(model=model, contents=memory)
+                    except Exception as e:
+                        print(e)
+                        backup(old_chatlogs, old_context_logs, old_memory, old_tokens)
+                        quit()
 
         # Save data
         context_logs.append([response.usage_metadata.prompt_token_count] + memory.copy()) # Append a copy of what the LLM had in memory at each prompt
@@ -31,7 +49,27 @@ def hierarchical_context(chatlogs, context_logs, rules, client, model, hierarchi
         # Update the summary based on most recent context
         instructions = {'role': 'user', 'parts': [{'text': 'Update the following Summary without removing its current headings or changing its current structure (OVERALL STORY, CURRENT QUEST, PLAYER STATUS): ' + hierarchical_summary}]}
         update = [instructions, {'role': 'user',  'parts': [{'text': action}]}]
-        new_hierarchical_summary = client.models.generate_content(model=model, contents=update)
+        try:
+            new_hierarchical_summary = client.models.generate_content(model=model, contents=update)
+        except KeyboardInterrupt:
+            save()
+            quit()
+        except Exception as e:
+            try:
+                time.sleep(1.1)
+                new_hierarchical_summary = client.models.generate_content(model=model, contents=update)
+            except:
+                try:
+                    time.sleep(2.1)
+                    new_hierarchical_summary = client.models.generate_content(model=model, contents=update)
+                except:
+                    try:
+                        time.sleep(4.1)
+                        new_hierarchical_summary = client.models.generate_content(model=model, contents=update)
+                    except Exception as e:
+                        print(e)
+                        backup(old_chatlogs, old_context_logs, old_memory, old_tokens)
+                        quit()
         tokens += new_hierarchical_summary.usage_metadata.prompt_token_count # Add tokens processed to token counter
         hierarchical_summary = new_hierarchical_summary.text
 
@@ -41,7 +79,7 @@ def hierarchical_context(chatlogs, context_logs, rules, client, model, hierarchi
 
     except Exception as e:
         print(e)
-        backup(chatlogs, context_logs, memory, tokens)
+        backup(old_chatlogs, old_context_logs, old_memory, old_tokens)
         quit()
 
     return tokens, memory, hierarchical_summary
