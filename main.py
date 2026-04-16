@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from context_full_history import full_history
 from context_n_latest import n_latest
 from context_running_summary import running_summary
-from context_hierarchical_context_injection import hierarchical_context
+from context_hierarchical_summary import hierarchical_context
 
 load_dotenv()
 
@@ -130,6 +130,9 @@ def save():
 
     # Add endtime to last session
     playtime[-1].append(time.time())
+
+    # Construct file name
+    file_name = str(file_number) + '_' + method + '_' + user
 
     session_data = {
         'Session': [file_name], 

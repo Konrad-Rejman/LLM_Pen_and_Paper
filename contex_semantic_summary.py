@@ -1,7 +1,8 @@
 from rolls import rolls
+from rouge_score import rouge_scorer
 import time, copy
 
-def hierarchical_context(chatlogs, context_logs, memory, rules, client, model, hierarchical_summary, tokens, save, backup):
+def semantic_context(chatlogs, context_logs, memory, rules, client, model, hierarchical_summary, tokens, save, backup):
     try:
         old_chatlogs = copy.deepcopy(chatlogs)
         old_context_logs = copy.deepcopy(context_logs)

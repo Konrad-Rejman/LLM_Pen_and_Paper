@@ -12,6 +12,7 @@ You will need the following installed in order to run the program:
 2. pandas
 3. dotenv
 4. google-genai
+5. rouge-score
 
 You can check for dependencies in the requirements.txt file.
 
