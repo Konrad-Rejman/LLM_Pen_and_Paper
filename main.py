@@ -6,6 +6,7 @@ from context_full_history import full_history
 from context_n_latest import n_latest
 from context_running_summary import running_summary
 from context_hierarchical_summary import hierarchical_context
+from context_semantic_summary import semantic_context
 
 load_dotenv()
 
@@ -196,6 +197,8 @@ if 'backup.pkl' in os.listdir():
             tokens, memory, summary = running_summary(chatlogs, context_logs, memory, rules, client, model, summary, tokens, save, backup)
         elif method == 'Hierarchical_Summary':
             tokens, memory, hierarchical_summary = hierarchical_context(chatlogs, context_logs, memory, rules, client, model, hierarchical_summary, tokens, save, backup)
+        elif method == 'Semantic_Summary':
+            tokens, memory, hierarchical_summary = semantic_context(chatlogs, context_logs, memory, rules, client, model, hierarchical_summary, tokens, save, backup)
 
 # Game start
 print('Press ctrl + c to exit.')
@@ -207,7 +210,7 @@ user = input('Enter your username (please use the same username for each session
 playtime = [[time.time()]]
 
 # Choose a context method the user hasn't used yet randomly, else choose a random method
-context_methods = ['Full_Context', 'N_Latest', 'Running_Summary', 'Hierarchical_Summary'] # List of implemented methods
+context_methods = ['Full_Context', 'N_Latest', 'Running_Summary', 'Hierarchical_Summary', 'Semantic_Summary'] # List of implemented methods
 random.shuffle(context_methods) # Randomise order of methods
 
 # Check data file for users previous sessions
@@ -227,6 +230,9 @@ for m in context_methods:
 if not method: # If user has used every context method at least once, choose a random method
     method = random.choice(context_methods)
 
+if method == 'Semantic_Summary': # For semantic summary both memory and summary matter, so additional summary cannot be present in memory
+    memory.remove({'role': 'user', 'parts': [{'text': summary}]})
+
 # Core loop, prompting the Model to continue with the story until the player exits using Ctrl + C
 print('\nGM:\n\n' + startMessage)
 while True:
@@ -238,3 +244,5 @@ while True:
         tokens, memory, summary = running_summary(chatlogs, context_logs, memory, rules, client, model, summary, tokens, save, backup)
     elif method == 'Hierarchical_Summary':
         tokens, memory, hierarchical_summary = hierarchical_context(chatlogs, context_logs, memory, rules, client, model, hierarchical_summary, tokens, save, backup)
+    elif method == 'Semantic_Summary':
+        tokens, memory, hierarchical_summary = semantic_context(chatlogs, context_logs, memory, rules, client, model, hierarchical_summary, tokens, save, backup)
