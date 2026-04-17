@@ -56,27 +56,50 @@ def semantic_context(chatlogs, context_logs, memory, rules, client, model, hiera
         if len(memory) > 2*n:
             memory = memory[-2*n:] # memory = last n interactions
 
+        # Construct reference to compare summaries against
+        last_n_interactions = ''
+        for prompt in memory:
+            last_n_interactions += (prompt['parts'][0]['text'] + '\n\n')
+        reference_summary = hierarchical_summary + '\n\nLAST THREE INTERACTIONS:\n\n' + last_n_interactions
+
         # Update the summary based on most recent context, getting three potential updated summaries separated by a BREAK string
-        instructions = {'role': 'user', 'parts': [{'text': 'Update the following Summary without removing its current headings or changing its current structure (OVERALL STORY, CURRENT QUEST, PLAYER STATUS). Give THREE examples of the updated summary each separated by a line containing ONLY the string BREAK. \n\nThis is the old summary: ' + hierarchical_summary}]}
-        update = [instructions] + memory # Update according to the last n interactions
+        instructions = [{'role': 'user', 'parts': [{'text':
+            f'''TASK: Update the Summary to reflect most recent interactions. 
+            
+            RULES:
+            1. Do not remove the current headings (OVERALL STORY, CURRENT QUEST, PLAYER STATUS) or change the structure. 
+            2. Do not remove sections or introduce new headings. 
+            3. Maintain the consistency of the narrative from the previous summary and interactions. 
+
+            OUTPUT REQUIREMENTS: 
+            4. Give exactly THREE alternative updated summaries. 
+            5. Separate the summaries by a line containing only: BREAK. 
+            6. Do not add any text before the first summary or after the last summary.
+            
+            INPUT:
+            This is the old summary: {hierarchical_summary}
+            These are the last three interactions: {last_n_interactions}
+            '''
+            }]
+        }]
         try:
             time.sleep(5.1)
-            hierarchical_summaries = client.models.generate_content(model=model, contents=update)
+            hierarchical_summaries = client.models.generate_content(model=model, contents=instructions)
         except KeyboardInterrupt:
             save()
             quit()
         except Exception as e:
             try:
                 time.sleep(1.1)
-                hierarchical_summaries = client.models.generate_content(model=model, contents=update)
+                hierarchical_summaries = client.models.generate_content(model=model, contents=instructions)
             except:
                 try:
                     time.sleep(2.1)
-                    hierarchical_summaries = client.models.generate_content(model=model, contents=update)
+                    hierarchical_summaries = client.models.generate_content(model=model, contents=instructions)
                 except:
                     try:
                         time.sleep(4.1)
-                        hierarchical_summaries = client.models.generate_content(model=model, contents=update)
+                        hierarchical_summaries = client.models.generate_content(model=model, contents=instructions)
                     except Exception as e:
                         print(e)
                         backup(old_chatlogs, old_context_logs, old_memory, old_tokens)
@@ -92,12 +115,6 @@ def semantic_context(chatlogs, context_logs, memory, rules, client, model, hiera
                 'rouge2': [],
                 'rougeL': []
             }
-
-            # Construct reference to compare summaries against
-            last_n_interactions = ''
-            for prompt in memory:
-                last_n_interactions += (prompt['parts'][0]['text'] + '\n\n')
-            reference_summary = hierarchical_summary + '\n\nLAST THREE INTERACTIONS:\n\n' + last_n_interactions
 
             # Get Rouge to score each summary
             for i in range(len(hierarchical_summaries)):
