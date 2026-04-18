@@ -40,7 +40,7 @@ def hierarchical_context(chatlogs, context_logs, memory, rules, client, model, h
                         quit()
 
         # Save data
-        context_logs.append([response.usage_metadata.prompt_token_count] + memory.copy()) # Append a copy of what the LLM had in memory at each prompt
+        context = [response.usage_metadata.prompt_token_count] + memory.copy()
         tokens += response.usage_metadata.prompt_token_count # Add tokens processed to token counter
         chatlogs.append({'role': 'model',  'parts': [{'text': response.text}]}) # Add GM response to chat history
 
@@ -69,10 +69,14 @@ def hierarchical_context(chatlogs, context_logs, memory, rules, client, model, h
                         print(e)
                         backup(old_chatlogs, old_context_logs, old_memory, old_tokens)
                         quit()
+        context[0] += new_hierarchical_summary.usage_metadata.prompt_token_count
         tokens += new_hierarchical_summary.usage_metadata.prompt_token_count # Add tokens processed to token counter
         hierarchical_summary = new_hierarchical_summary.text
 
         print('\nGM:\n\n' + response.text)
+
+        # Save context
+        context_logs.append(context)
 
     except KeyboardInterrupt:
         save() # Save session data

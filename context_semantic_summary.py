@@ -5,7 +5,7 @@ import time, copy, spacy
 
 nlp = spacy.load('en_core_web_md')
 
-def semantic_context(chatlogs, context_logs, memory, rules, client, model, hierarchical_summary, tokens, save, backup, n=3):
+def semantic_context(chatlogs, context_logs, memory, rules, client, model, hierarchical_summary, tokens, save, backup, n=2):
     try:
         old_chatlogs = copy.deepcopy(chatlogs)
         old_context_logs = copy.deepcopy(context_logs)
@@ -19,7 +19,11 @@ def semantic_context(chatlogs, context_logs, memory, rules, client, model, hiera
 
         # Generate random rolls for model to use
         rolls_message = rolls()
-        memory = [rules, rolls_message, {'role': 'user', 'parts': [{'text': hierarchical_summary}]}] + memory + [{'role': 'user',  'parts': [{'text': action}]}] # Construct memory (rules, rolls, summary, last n interactions, user action)
+        # Add rules and other messages to memory
+        if memory[0] == rules:
+            memory = [rules, rolls_message, {'role': 'user', 'parts': [{'text': hierarchical_summary}]}] + memory[1:] + [{'role': 'user',  'parts': [{'text': action}]}] # Construct memory (rules, rolls, summary, last n interactions, user action)
+        else:
+            memory = [rules, rolls_message, {'role': 'user', 'parts': [{'text': hierarchical_summary}]}] + memory + [{'role': 'user',  'parts': [{'text': action}]}] # Construct memory (rules, rolls, summary, last n interactions, user action)
         
         # Get response from model
         try:
@@ -45,7 +49,7 @@ def semantic_context(chatlogs, context_logs, memory, rules, client, model, hiera
                         quit()
 
         # Save data
-        context_logs.append([response.usage_metadata.prompt_token_count] + memory.copy()) # Append a copy of what the LLM had in memory at each prompt
+        context = [response.usage_metadata.prompt_token_count] + memory.copy()
         tokens += response.usage_metadata.prompt_token_count # Add tokens processed to token counter
         chatlogs.append({'role': 'model',  'parts': [{'text': response.text}]}) # Add GM response to chat history
         memory.append({'role': 'model',  'parts': [{'text': response.text}]}) # Add response to memory
@@ -63,25 +67,19 @@ def semantic_context(chatlogs, context_logs, memory, rules, client, model, hiera
         last_n_interactions = ''
         for prompt in memory:
             last_n_interactions += (prompt['parts'][0]['text'] + '\n\n')
-        reference_summary = hierarchical_summary + '\n\nLAST THREE INTERACTIONS:\n\n' + last_n_interactions
+        reference_summary = hierarchical_summary + '\n\nLAST INTERACTIONS:\n\n' + last_n_interactions
 
         # Update the summary based on most recent context, getting three potential updated summaries separated by a BREAK string
         instructions = [{'role': 'user', 'parts': [{'text':
-            f'''TASK: Update the Summary to reflect most recent interactions. 
-            
-            RULES:
-            1. Do not remove the current headings (OVERALL STORY, CURRENT QUEST, PLAYER STATUS) or change the structure. 
-            2. Do not remove sections or introduce new headings. 
-            3. Maintain the consistency of the narrative from the previous summary and interactions. 
+            f'''TASK: Update the Summary to reflect recent interactions. 
 
-            OUTPUT REQUIREMENTS: 
-            4. Give exactly THREE alternative updated summaries. 
-            5. Separate the summaries by a line containing only: BREAK. 
-            6. Do not add any text before the first summary or after the last summary.
-            
-            INPUT:
+            1. Do not remove the current headings (OVERALL STORY, CURRENT QUEST, PLAYER STATUS) or change the structure. 
+            2. Give exactly THREE alternative updated summaries. 
+            3. Separate the summaries by a line containing only: BREAK. 
+            4. Do not add any text before the first summary or after the last summary.
+
             This is the old summary: {hierarchical_summary}
-            These are the last three interactions: {last_n_interactions}
+            These are the last interactions: {last_n_interactions}
             '''
             }]
         }]
@@ -107,6 +105,7 @@ def semantic_context(chatlogs, context_logs, memory, rules, client, model, hiera
                         print(e)
                         backup(old_chatlogs, old_context_logs, old_memory, old_tokens)
                         quit()
+        context[0] += hierarchical_summaries.usage_metadata.prompt_token_count
         tokens += hierarchical_summaries.usage_metadata.prompt_token_count # Add tokens processed to token counter
         hierarchical_summaries = hierarchical_summaries.text
 
@@ -151,6 +150,9 @@ def semantic_context(chatlogs, context_logs, memory, rules, client, model, hiera
             hierarchical_summary = hierarchical_summaries[best]
 
         print('\nGM:\n\n' + response.text)
+    
+        # Save context
+        context_logs.append(context)
 
     except KeyboardInterrupt:
         save() # Save session data

@@ -39,7 +39,7 @@ def running_summary(chatlogs, context_logs, memory, rules, client, model, summar
                         backup(old_chatlogs, old_context_logs, old_memory, old_tokens)
                         quit()
         # Save data
-        context_logs.append([response.usage_metadata.prompt_token_count] + memory.copy()) # Append a copy of what the LLM had in memory at each prompt
+        context = [response.usage_metadata.prompt_token_count] + memory.copy()
         tokens += response.usage_metadata.prompt_token_count # Add tokens processed to token counter
         chatlogs.append({'role': 'model',  'parts': [{'text': response.text}]}) # Add GM response to chat history
 
@@ -68,10 +68,14 @@ def running_summary(chatlogs, context_logs, memory, rules, client, model, summar
                         print(e)
                         backup(old_chatlogs, old_context_logs, old_memory, old_tokens)
                         quit()
+        context[0] += new_summary.usage_metadata.prompt_token_count
         tokens += new_summary.usage_metadata.prompt_token_count # Add tokens processed to token counter
         summary = new_summary.text
 
         print('\nGM:\n\n' + response.text)
+
+        # Save context
+        context_logs.append(context)
     
     except KeyboardInterrupt:
         save() # Save session data
