@@ -1,6 +1,9 @@
 from rolls import rolls
 from rouge_score import rouge_scorer
-import time, copy
+from sklearn.metrics.pairwise import cosine_similarity
+import time, copy, spacy
+
+nlp = spacy.load('en_core_web_md')
 
 def semantic_context(chatlogs, context_logs, memory, rules, client, model, hierarchical_summary, tokens, save, backup, n=3):
     try:
@@ -16,7 +19,7 @@ def semantic_context(chatlogs, context_logs, memory, rules, client, model, hiera
 
         # Generate random rolls for model to use
         rolls_message = rolls()
-        memory = [rules, rolls_message, {'role': 'user', 'parts': [{'text': hierarchical_summary}]}] + memory[1:] + [{'role': 'user',  'parts': [{'text': action}]}] # Construct memory (rules, rolls, summary, last n interactions, user action)
+        memory = [rules, rolls_message, {'role': 'user', 'parts': [{'text': hierarchical_summary}]}] + memory + [{'role': 'user',  'parts': [{'text': action}]}] # Construct memory (rules, rolls, summary, last n interactions, user action)
         
         # Get response from model
         try:
@@ -106,7 +109,9 @@ def semantic_context(chatlogs, context_logs, memory, rules, client, model, hiera
                         quit()
         tokens += hierarchical_summaries.usage_metadata.prompt_token_count # Add tokens processed to token counter
         hierarchical_summaries = hierarchical_summaries.text
-        if hierarchical_summaries != None: # If summaries created correctly, else continue using old summary
+
+        # If summaries created correctly, else continue using old summary
+        if hierarchical_summaries != None:
             hierarchical_summaries = hierarchical_summaries.split('BREAK')
 
             # Scores dict for storing Rouge scores
@@ -123,8 +128,21 @@ def semantic_context(chatlogs, context_logs, memory, rules, client, model, hiera
                 for x in r:
                     scores[x].append(r[x])
 
-            # Select summary with highest overall Rouge score (f-measure) to be the new summary
-            overall_scores = [sum(scores[r][i].fmeasure for r in scores) for i in range(len(hierarchical_summaries))]
+            # Store cosine similarities
+            cos_sim = []
+            cos_reference = nlp(reference_summary)
+
+            for i in range(len(hierarchical_summaries)):
+                eval_summary = nlp(hierarchical_summaries[i])
+                similarity = cosine_similarity([cos_reference.vector], [eval_summary.vector])[0][0] # Cosine Similarity of summary with refrence summary
+                cos_sim.append(similarity)
+
+            # Combine all scores, weighted towards Cosine Similarity for abstractive meaning
+            overall_scores = [
+                0.5 * cos_sim[i] + 0.2 * scores['rouge1'][i].fmeasure + 0.2 * scores['rouge2'][i].fmeasure + 0.2 * scores['rougeL'][i].fmeasure for i in range(len(hierarchical_summaries))
+            ]
+
+            # Select best summary
             best = 0
             if len(overall_scores) > 1:
                 for i in range(len(overall_scores)):

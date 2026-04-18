@@ -13,6 +13,9 @@ You will need the following installed in order to run the program:
 3. dotenv
 4. google-genai
 5. rouge-score
+6. scikit-learn
+7. spacy
+8. en_core_web_md
 
 You can check for dependencies in the requirements.txt file.
 
