@@ -8,6 +8,7 @@
 
 You will need the following installed in order to run the program:
 
+##### Pip
 1. Python
 2. pandas
 3. dotenv
@@ -15,7 +16,9 @@ You will need the following installed in order to run the program:
 5. rouge-score
 6. scikit-learn
 7. spacy
-8. en_core_web_md
+
+##### Pthon -m
+8. en_core_web_md (python -m spacy download en_core_web_md)
 
 You can check for dependencies in the requirements.txt file.
 
