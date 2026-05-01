@@ -37,6 +37,6 @@ To run the program, follow all previous instructions and (ensuring you are in th
 
 The program should run correctly from there, initialising the model and starting the gameplay loop. To exit the program, press ctrl + c and input the feedback on the session.
 
-If a failure occures (most commonly due to the server hosting the AI having unusually high demand), a backup.pkl file should be saved containing the session details at time of failure. This file will ensure that the next time the code is run, it loads the saved backup data instead of starting again. 
+If a failure occurs (most commonly due to the server hosting the AI having unusually high demand), a backup.pkl file should be saved containing the session details at time of failure. This file will ensure that the next time the code is run, it loads the saved backup data instead of starting again. 
 
-For correct functionality deleted this backup file once the data has been loaded into the new session, otherwise it will continually attempt to load from backup.
+For correct functionality delete this backup file once the data has been loaded into the new session, otherwise it will continually attempt to load from backup.
