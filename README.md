@@ -8,8 +8,9 @@
 
 You will need the following installed in order to run the program:
 
-##### Pip
 1. Python
+
+##### Pip
 2. pandas
 3. dotenv
 4. google-genai
